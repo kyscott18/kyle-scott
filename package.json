@@ -1,0 +1,15 @@
+{
+  "name": "kyle-scott",
+  "devDependencies": {
+    "@biomejs/biome": "^1.5.1",
+    "@types/bun": "latest"
+  },
+  "private": "true",
+  "scripts": {
+    "build": "forge build",
+    "test": "forge test",
+    "format": "biome format . --write && forge fmt",
+    "clean": "rm -rf cache out",
+    "lint": "biome check ."
+  }
+}
