@@ -51,6 +51,4 @@ function removeLiquidity(Strike memory strike, uint256 amount) pure {
     }
 }
 
-function swap(Strike[] memory strikes) pure returns (uint256 amount0, uint256 amount1) {
-    unchecked {}
-}
+function swap(Strike memory strike) pure returns (uint256 amount0, uint256 amount1) {}
