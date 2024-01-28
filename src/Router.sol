@@ -18,7 +18,7 @@ contract Router is ICallback {
 
     struct CallbackData {
         address payer;
-        Permit3.SignatureTransfer signatureTransfer;
+        Permit3.SignatureTransferBatch signatureTransfer;
         bytes signature;
     }
 
@@ -43,54 +43,38 @@ contract Router is ICallback {
                                  LOGIC
     <//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\>*/
 
-    function swap(
-        Engine.SwapParams calldata params,
-        Permit3.SignatureTransfer calldata signatureTransfer,
+    function route(
+        Engine.Params[] calldata params,
+        address to,
+        Permit3.SignatureTransferBatch calldata signatureTransfer,
         bytes calldata signature
     )
         external
     {
         CallbackData memory callbackData = CallbackData(msg.sender, signatureTransfer, signature);
 
-        engine.swap(params, abi.encode(callbackData));
-    }
-
-    function addLiquidity(
-        Engine.AddLiquidityParams calldata params,
-        Permit3.SignatureTransfer calldata signatureTransfer,
-        bytes calldata signature
-    )
-        external
-    {
-        CallbackData memory callbackData = CallbackData(msg.sender, signatureTransfer, signature);
-
-        engine.addLiquidity(params, abi.encode(callbackData));
-    }
-
-    function removeLiquidity(
-        Engine.RemoveLiquidityParams calldata params,
-        Permit3.SignatureTransfer calldata signatureTransfer,
-        bytes calldata signature
-    )
-        external
-    {
-        CallbackData memory callbackData = CallbackData(msg.sender, signatureTransfer, signature);
-
-        engine.removeLiquidity(params, abi.encode(callbackData));
+        engine.execute(params, to, abi.encode(callbackData));
     }
 
     function callback(bytes calldata data) external {
-        if (msg.sender != address(engine)) revert InvalidCaller(msg.sender);
+        unchecked {
+            if (msg.sender != address(engine)) revert InvalidCaller(msg.sender);
 
-        CallbackData memory callbackData = abi.decode(data, (CallbackData));
+            CallbackData memory callbackData = abi.decode(data, (CallbackData));
 
-        Permit3.RequestedTransferDetails memory requestedTransfer = Permit3.RequestedTransferDetails({
-            to: callbackData.payer,
-            transferDetails: abi.encode(callbackData.signatureTransfer.transferDetails)
-        });
+            Permit3.RequestedTransferDetails[] memory requestedTransfer =
+                new Permit3.RequestedTransferDetails[](callbackData.signatureTransfer.transferDetails.length);
 
-        permit3.transferBySignature(
-            callbackData.payer, callbackData.signatureTransfer, requestedTransfer, callbackData.signature
-        );
+            for (uint256 i = 0; i < requestedTransfer.length; i++) {
+                requestedTransfer[i] = Permit3.RequestedTransferDetails({
+                    to: callbackData.payer,
+                    transferDetails: abi.encode(callbackData.signatureTransfer.transferDetails[i])
+                });
+            }
+
+            permit3.transferBySignature(
+                callbackData.payer, callbackData.signatureTransfer, requestedTransfer, callbackData.signature
+            );
+        }
     }
 }
