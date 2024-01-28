@@ -29,7 +29,6 @@ function isStrikeValid(uint256 strike, StrikeData memory strikeData) pure return
 }
 
 /// @notice Computes an unique identifier for a pair
-/// @dev token0 must sort before token1
 function getPairID(address token0, address token1) pure returns (bytes32) {
     return keccak256(abi.encodePacked(token0, token1));
 }
