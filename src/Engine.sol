@@ -63,12 +63,12 @@ contract Engine is Position {
             for (uint256 i = 0; i < params.length; i++) {
                 bytes32 pairID = getPairID(params[i].token0, params[i].token1);
 
-                bytes32 _strikeHash = strikeHashes[pairID][params[i].ratio];
-                bytes32 strikeHash = keccak256(abi.encode(params[i].strikeBefore));
+                bytes32 strikeHash = strikeHashes[pairID][params[i].ratio];
+                bytes32 _strikeHash = keccak256(abi.encode(params[i].strikeBefore));
 
-                if (_strikeHash == bytes32(0)) {
+                if (strikeHash == bytes32(0)) {
                     params[i].strikeBefore = StrikeData({liquidity: 0, amount: 0, token: TokenSelector.Token0});
-                } else if (_strikeHash != strikeHash) {
+                } else if (strikeHash != _strikeHash) {
                     revert InvalidStrikeHash();
                 }
 
