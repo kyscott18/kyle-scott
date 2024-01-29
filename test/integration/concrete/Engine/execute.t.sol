@@ -5,7 +5,8 @@ import {Test} from "forge-std/Test.sol";
 import {MockERC20} from "solmate/src/test/utils/mocks/MockERC20.sol";
 
 import {ICallback, Engine} from "src/Engine.sol";
-import {StrikeData, Q128, TokenSelector, getPairID} from "src/Pair.sol";
+import {getPairID} from "src/Pair.sol";
+import {Q128} from "src/Math.sol";
 import {Position} from "src/Position.sol";
 
 contract ExecuteTest is Test, ICallback {
@@ -35,8 +36,8 @@ contract ExecuteTest is Test, ICallback {
             token0: address(mockERC20_0),
             token1: address(mockERC20_1),
             ratio: Q128,
-            strikeBefore: StrikeData({liquidity: 0, amount: 0, token: TokenSelector.Token0}),
-            strikeAfter: StrikeData({liquidity: 1e18, amount: 1e18, token: TokenSelector.Token0})
+            strikeBefore: Engine.StrikeData({liquidity: 0, amount: 0, token: Engine.TokenSelector.Token0}),
+            strikeAfter: Engine.StrikeData({liquidity: 1e18, amount: 1e18, token: Engine.TokenSelector.Token0})
         });
 
         amount0 = 1e18;
@@ -66,8 +67,8 @@ contract ExecuteTest is Test, ICallback {
             token0: address(mockERC20_0),
             token1: address(mockERC20_1),
             ratio: Q128,
-            strikeBefore: StrikeData({liquidity: 0, amount: 0, token: TokenSelector.Token0}),
-            strikeAfter: StrikeData({liquidity: 1e18, amount: 1e18, token: TokenSelector.Token0})
+            strikeBefore: Engine.StrikeData({liquidity: 0, amount: 0, token: Engine.TokenSelector.Token0}),
+            strikeAfter: Engine.StrikeData({liquidity: 1e18, amount: 1e18, token: Engine.TokenSelector.Token0})
         });
 
         amount0 = 1e18;
@@ -78,8 +79,8 @@ contract ExecuteTest is Test, ICallback {
             token0: address(mockERC20_0),
             token1: address(mockERC20_1),
             ratio: Q128,
-            strikeBefore: StrikeData({liquidity: 1e18, amount: 1e18, token: TokenSelector.Token0}),
-            strikeAfter: StrikeData({liquidity: 2e18, amount: 2e18, token: TokenSelector.Token0})
+            strikeBefore: Engine.StrikeData({liquidity: 1e18, amount: 1e18, token: Engine.TokenSelector.Token0}),
+            strikeAfter: Engine.StrikeData({liquidity: 2e18, amount: 2e18, token: Engine.TokenSelector.Token0})
         });
 
         vm.resumeGasMetering();

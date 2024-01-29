@@ -2,7 +2,7 @@
 pragma solidity ^0.8.20;
 
 import {Account, createAccount, updateERC20, updateLP, getBalances, transferTokens} from "./Account.sol";
-import {isStrikeValid, getPairID, StrikeData, TokenSelector} from "./Pair.sol";
+import {isStrikeValid, getPairID} from "./Pair.sol";
 import {Position} from "./Position.sol";
 import {ERC20} from "solmate/src/tokens/ERC20.sol";
 import {SafeTransferLib} from "solmate/src/utils/SafeTransferLib.sol";
@@ -26,6 +26,17 @@ contract Engine is Position {
     /*<//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\>
                                DATA TYPES
     <//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\>*/
+
+    enum TokenSelector {
+        Token0,
+        Token1
+    }
+
+    struct StrikeData {
+        uint256 liquidity;
+        uint256 amount;
+        TokenSelector token;
+    }
 
     struct Params {
         address token0;
