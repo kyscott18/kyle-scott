@@ -2,13 +2,13 @@
 pragma solidity ^0.8.20;
 
 import {Engine} from "./Engine.sol";
-import {Q128, mulDivRoundingUp} from "./Math.sol";
+import {Q128, mulgte} from "./Math.sol";
 
 function isStrikeValid(uint256 strike, Engine.StrikeData memory strikeData) pure returns (bool) {
     if (strikeData.token == Engine.TokenSelector.Token0) {
         return strikeData.liquidity <= strikeData.amount;
     } else {
-        return strikeData.liquidity <= mulDivRoundingUp(strikeData.amount, strike, Q128);
+        return mulgte(strikeData.amount, strike, strikeData.liquidity, Q128);
     }
 }
 
