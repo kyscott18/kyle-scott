@@ -33,15 +33,17 @@ contract Engine is Position {
     }
 
     struct StrikeData {
-        uint256 liquidity;
-        uint256 amount;
         TokenSelector token;
+        uint256 amount;
+        uint256 liquidity;
+        uint256 liquiditySwapGrowth;
     }
 
     struct Params {
         address token0;
         address token1;
         uint256 ratio;
+        uint256 spread;
         StrikeData strikeBefore;
         StrikeData strikeAfter;
     }
@@ -66,13 +68,16 @@ contract Engine is Position {
                 bytes32 strikeHash = strikeHashes[pairID][params[i].ratio];
                 bytes32 _strikeHash = keccak256(abi.encode(params[i].strikeBefore));
 
+                // TODO: Validate strike and spread combination.
+
                 if (strikeHash == bytes32(0)) {
-                    params[i].strikeBefore = StrikeData({liquidity: 0, amount: 0, token: TokenSelector.Token0});
+                    params[i].strikeBefore =
+                        StrikeData({token: TokenSelector.Token0, amount: 0, liquidity: 0, liquiditySwapGrowth: 0});
                 } else if (strikeHash != _strikeHash) {
                     revert InvalidStrikeHash();
                 }
 
-                if (!isStrikeValid(params[i].ratio, params[i].strikeAfter)) revert InvalidStrike();
+                if (!isStrikeValid(params[i].ratio, params[i].spread, params[i].strikeAfter)) revert InvalidStrike();
 
                 strikeHashes[pairID][params[i].ratio] = keccak256(abi.encode(params[i].strikeAfter));
 
@@ -84,6 +89,7 @@ contract Engine is Position {
 
                     if (strikeBeforeLiquidity > strikeAfterLiquidity) {
                         updateLP(account, positionID, strikeBeforeLiquidity - strikeAfterLiquidity);
+                        // TODO: Withdraw earned fees.
                     } else if (strikeBeforeLiquidity < strikeAfterLiquidity) {
                         _mint(to, positionID, strikeAfterLiquidity - strikeBeforeLiquidity);
                     }
@@ -111,6 +117,8 @@ contract Engine is Position {
                                 true
                             );
                         }
+
+                        // TODO: Assert the user passed in the correct liquiditySwapGrowth variable.
                     } else {
                         updateERC20(
                             account,
@@ -124,6 +132,8 @@ contract Engine is Position {
                             amountAfter,
                             true
                         );
+
+                        // TODO: Assert the user passed in the correct liquiditySwapGrowth variable.
                     }
                 }
             }

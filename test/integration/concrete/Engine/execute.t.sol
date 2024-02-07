@@ -36,8 +36,19 @@ contract ExecuteTest is Test, ICallback {
             token0: address(mockERC20_0),
             token1: address(mockERC20_1),
             ratio: Q128,
-            strikeBefore: Engine.StrikeData({liquidity: 0, amount: 0, token: Engine.TokenSelector.Token0}),
-            strikeAfter: Engine.StrikeData({liquidity: 1e18, amount: 1e18, token: Engine.TokenSelector.Token0})
+            spread: 0,
+            strikeBefore: Engine.StrikeData({
+                token: Engine.TokenSelector.Token0,
+                amount: 0,
+                liquidity: 0,
+                liquiditySwapGrowth: 0
+            }),
+            strikeAfter: Engine.StrikeData({
+                token: Engine.TokenSelector.Token0,
+                amount: 1e18,
+                liquidity: 1e18,
+                liquiditySwapGrowth: 0
+            })
         });
 
         amount0 = 1e18;
@@ -54,7 +65,7 @@ contract ExecuteTest is Test, ICallback {
             )
         );
 
-        assertEq(engine.dataOf(address(this), positionID).balance, 1e18);
+        assertEq(engine.dataOf_XXXXXX(address(this), positionID).balance, 1e18);
 
         vm.resumeGasMetering();
     }
@@ -67,8 +78,19 @@ contract ExecuteTest is Test, ICallback {
             token0: address(mockERC20_0),
             token1: address(mockERC20_1),
             ratio: Q128,
-            strikeBefore: Engine.StrikeData({liquidity: 0, amount: 0, token: Engine.TokenSelector.Token0}),
-            strikeAfter: Engine.StrikeData({liquidity: 1e18, amount: 1e18, token: Engine.TokenSelector.Token0})
+            spread: 0,
+            strikeBefore: Engine.StrikeData({
+                token: Engine.TokenSelector.Token0,
+                amount: 0,
+                liquidity: 0,
+                liquiditySwapGrowth: 0
+            }),
+            strikeAfter: Engine.StrikeData({
+                token: Engine.TokenSelector.Token0,
+                amount: 1e18,
+                liquidity: 1e18,
+                liquiditySwapGrowth: 0
+            })
         });
 
         amount0 = 1e18;
@@ -79,8 +101,19 @@ contract ExecuteTest is Test, ICallback {
             token0: address(mockERC20_0),
             token1: address(mockERC20_1),
             ratio: Q128,
-            strikeBefore: Engine.StrikeData({liquidity: 1e18, amount: 1e18, token: Engine.TokenSelector.Token0}),
-            strikeAfter: Engine.StrikeData({liquidity: 2e18, amount: 2e18, token: Engine.TokenSelector.Token0})
+            spread: 0,
+            strikeBefore: Engine.StrikeData({
+                token: Engine.TokenSelector.Token0,
+                amount: 1e18,
+                liquidity: 1e18,
+                liquiditySwapGrowth: 0
+            }),
+            strikeAfter: Engine.StrikeData({
+                token: Engine.TokenSelector.Token0,
+                amount: 2e18,
+                liquidity: 2e18,
+                liquiditySwapGrowth: 0
+            })
         });
 
         vm.resumeGasMetering();
@@ -95,7 +128,7 @@ contract ExecuteTest is Test, ICallback {
             )
         );
 
-        assertEq(engine.dataOf(address(this), positionID).balance, 2e18);
+        assertEq(engine.dataOf_XXXXXX(address(this), positionID).balance, 2e18);
 
         vm.resumeGasMetering();
     }
