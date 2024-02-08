@@ -1,2 +1,2 @@
-ExecuteTest:test_AddLiquidity_Cold() (gas: 121930)
-ExecuteTest:test_AddLiquidity_Hot() (gas: 25019)
+ExecuteTest:test_AddLiquidity_Cold() (gas: 121814)
+ExecuteTest:test_AddLiquidity_Hot() (gas: 24904)
