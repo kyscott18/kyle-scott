@@ -78,29 +78,27 @@ contract Engine is Position {
             for (uint256 i = 0; i < params.length; i++) {
                 bytes32 pairID = getPairID(params[i].token0, params[i].token1);
 
+                // Update strikeHashes
                 {
                     bytes32 strikeID = getStrikeID(params[i].ratio, params[i].spread);
+                    bytes32 strikeHash = strikeHashes[pairID][strikeID];
+                    bytes32 _strikeHash = keccak256(abi.encode(params[i].strikeBefore));
 
-                    // Verify strikeBefore
-                    {
-                        bytes32 strikeHash = strikeHashes[pairID][strikeID];
-                        bytes32 _strikeHash = keccak256(abi.encode(params[i].strikeBefore));
+                    // Validate strikeBefore
+                    if (strikeHash == bytes32(0)) {
+                        // Validate ratio + spread combination
+                        uint256 ratio = params[i].ratio;
+                        uint256 spread = params[i].spread;
+                        if (spread > ratio || spread + ratio < ratio) revert InvalidStrike();
 
-                        if (strikeHash == bytes32(0)) {
-                            // Validate ratio + spread combination
-                            uint256 ratio = params[i].ratio;
-                            uint256 spread = params[i].spread;
-                            if (spread > ratio || spread + ratio < ratio) revert InvalidStrike();
-
-                            // Set strikeBefore to default value
-                            params[i].strikeBefore =
-                                StrikeData({token: TokenSelector.Token0, amount: 0, liquidity: 0, volume: 0});
-                        } else if (strikeHash != _strikeHash) {
-                            revert InvalidStrikeHash();
-                        }
+                        // Set strikeBefore to default value
+                        params[i].strikeBefore =
+                            StrikeData({token: TokenSelector.Token0, amount: 0, liquidity: 0, volume: 0});
+                    } else if (strikeHash != _strikeHash) {
+                        revert InvalidStrikeHash();
                     }
 
-                    // Verify strikeAfter
+                    // Validate strikeAfter
                     if (!isStrikeValid(params[i].ratio, params[i].spread, params[i].strikeAfter)) {
                         revert InvalidStrike();
                     }
