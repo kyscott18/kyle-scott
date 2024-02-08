@@ -4,7 +4,7 @@ pragma solidity ^0.8.0;
 import {Test} from "forge-std/Test.sol";
 import {MockERC20} from "solmate/src/test/utils/mocks/MockERC20.sol";
 
-import {ICallback, Engine, getPairID, StrikeData, TokenSelector} from "src/Engine.sol";
+import {ICallback, Engine, StrikeData, TokenSelector} from "src/Engine.sol";
 import {Q128} from "src/Math.sol";
 import {Position} from "src/Position.sol";
 
@@ -50,7 +50,10 @@ contract ExecuteTest is Test, ICallback {
 
         bytes32 positionID = keccak256(
             abi.encode(
-                Position.ILRTADataID({pairID: getPairID(address(mockERC20_0), address(mockERC20_1)), strike: Q128})
+                Position.ILRTADataID({
+                    pairID: keccak256(abi.encodePacked(address(mockERC20_0), address(mockERC20_1))),
+                    strike: Q128
+                })
             )
         );
 
@@ -93,7 +96,10 @@ contract ExecuteTest is Test, ICallback {
 
         bytes32 positionID = keccak256(
             abi.encode(
-                Position.ILRTADataID({pairID: getPairID(address(mockERC20_0), address(mockERC20_1)), strike: Q128})
+                Position.ILRTADataID({
+                    pairID: keccak256(abi.encodePacked(address(mockERC20_0), address(mockERC20_1))),
+                    strike: Q128
+                })
             )
         );
 

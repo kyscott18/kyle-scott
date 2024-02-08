@@ -17,24 +17,11 @@ enum TokenSelector {
     Token1
 }
 
-struct StrikeID {
-    uint256 ratio;
-    uint256 spread;
-}
-
 struct StrikeData {
     TokenSelector token;
     uint256 amount;
     uint256 liquidity;
     uint256 volume;
-}
-
-function getPairID(address token0, address token1) pure returns (bytes32) {
-    return keccak256(abi.encodePacked(token0, token1));
-}
-
-function getStrikeID(uint256 ratio, uint256 spread) pure returns (bytes32) {
-    return keccak256(abi.encode(StrikeID({ratio: ratio, spread: spread})));
 }
 
 contract Engine is Position {
@@ -76,11 +63,11 @@ contract Engine is Position {
             Account memory account = createAccount(params.length);
 
             for (uint256 i = 0; i < params.length; i++) {
-                bytes32 pairID = getPairID(params[i].token0, params[i].token1);
+                bytes32 pairID = keccak256(abi.encodePacked(params[i].token0, params[i].token1));
 
                 // Update strikeHashes
                 {
-                    bytes32 strikeID = getStrikeID(params[i].ratio, params[i].spread);
+                    bytes32 strikeID = keccak256(abi.encodePacked(params[i].ratio, params[i].spread));
                     bytes32 strikeHash = strikeHashes[pairID][strikeID];
                     bytes32 _strikeHash = keccak256(abi.encode(params[i].strikeBefore));
 
@@ -103,7 +90,7 @@ contract Engine is Position {
                         revert InvalidStrike();
                     }
 
-                    // Save strikeAfter
+                    // Set strikeHash
                     strikeHashes[pairID][strikeID] = keccak256(abi.encode(params[i].strikeAfter));
                 }
 
