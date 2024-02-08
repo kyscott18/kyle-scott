@@ -2,7 +2,7 @@
 pragma solidity ^0.8.20;
 
 import {Account, createAccount, updateERC20, updateLP, getBalances, transferTokens} from "./Account.sol";
-import {isStrikeValid, getPairID} from "./Pair.sol";
+import {isStrikeValid} from "./Pair.sol";
 import {Position} from "./Position.sol";
 import {ERC20} from "solmate/src/tokens/ERC20.sol";
 import {SafeTransferLib} from "solmate/src/utils/SafeTransferLib.sol";
@@ -10,6 +10,31 @@ import {SafeTransferLib} from "solmate/src/utils/SafeTransferLib.sol";
 interface ICallback {
     /// @param data Extra data passed back to the callback from the caller
     function callback(bytes calldata data) external;
+}
+
+enum TokenSelector {
+    Token0,
+    Token1
+}
+
+struct StrikeID {
+    uint256 ratio;
+    uint256 spread;
+}
+
+struct StrikeData {
+    TokenSelector token;
+    uint256 amount;
+    uint256 liquidity;
+    uint256 volume;
+}
+
+function getPairID(address token0, address token1) pure returns (bytes32) {
+    return keccak256(abi.encodePacked(token0, token1));
+}
+
+function getStrikeID(uint256 ratio, uint256 spread) pure returns (bytes32) {
+    return keccak256(abi.encode(StrikeID({ratio: ratio, spread: spread})));
 }
 
 contract Engine is Position {
@@ -27,18 +52,6 @@ contract Engine is Position {
                                DATA TYPES
     <//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\>*/
 
-    enum TokenSelector {
-        Token0,
-        Token1
-    }
-
-    struct StrikeData {
-        TokenSelector token;
-        uint256 amount;
-        uint256 liquidity;
-        uint256 liquiditySwapGrowth;
-    }
-
     struct Params {
         address token0;
         address token1;
@@ -52,7 +65,7 @@ contract Engine is Position {
                                 STORAGE
     <//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\>*/
 
-    mapping(bytes32 pairID => mapping(uint256 strike => bytes32)) public strikeHashes;
+    mapping(bytes32 pairID => mapping(bytes32 => bytes32)) public strikeHashes;
 
     /*<//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\>
                                  LOGIC
@@ -65,22 +78,38 @@ contract Engine is Position {
             for (uint256 i = 0; i < params.length; i++) {
                 bytes32 pairID = getPairID(params[i].token0, params[i].token1);
 
-                bytes32 strikeHash = strikeHashes[pairID][params[i].ratio];
-                bytes32 _strikeHash = keccak256(abi.encode(params[i].strikeBefore));
+                {
+                    bytes32 strikeID = getStrikeID(params[i].ratio, params[i].spread);
 
-                // TODO: Validate strike and spread combination.
+                    // Verify strikeBefore
+                    {
+                        bytes32 strikeHash = strikeHashes[pairID][strikeID];
+                        bytes32 _strikeHash = keccak256(abi.encode(params[i].strikeBefore));
 
-                if (strikeHash == bytes32(0)) {
-                    params[i].strikeBefore =
-                        StrikeData({token: TokenSelector.Token0, amount: 0, liquidity: 0, liquiditySwapGrowth: 0});
-                } else if (strikeHash != _strikeHash) {
-                    revert InvalidStrikeHash();
+                        if (strikeHash == bytes32(0)) {
+                            // Validate ratio + spread combination
+                            uint256 ratio = params[i].ratio;
+                            uint256 spread = params[i].spread;
+                            if (spread > ratio || spread + ratio < ratio) revert InvalidStrike();
+
+                            // Set strikeBefore to default value
+                            params[i].strikeBefore =
+                                StrikeData({token: TokenSelector.Token0, amount: 0, liquidity: 0, volume: 0});
+                        } else if (strikeHash != _strikeHash) {
+                            revert InvalidStrikeHash();
+                        }
+                    }
+
+                    // Verify strikeAfter
+                    if (!isStrikeValid(params[i].ratio, params[i].spread, params[i].strikeAfter)) {
+                        revert InvalidStrike();
+                    }
+
+                    // Save strikeAfter
+                    strikeHashes[pairID][strikeID] = keccak256(abi.encode(params[i].strikeAfter));
                 }
 
-                if (!isStrikeValid(params[i].ratio, params[i].spread, params[i].strikeAfter)) revert InvalidStrike();
-
-                strikeHashes[pairID][params[i].ratio] = keccak256(abi.encode(params[i].strikeAfter));
-
+                // Update changes in liquidity
                 {
                     bytes32 positionID = keccak256(abi.encode(ILRTADataID({pairID: pairID, strike: params[i].ratio})));
 
@@ -95,45 +124,34 @@ contract Engine is Position {
                     }
                 }
 
+                // Update changes in token amounts
                 {
                     TokenSelector tokenBefore = params[i].strikeBefore.token;
                     TokenSelector tokenAfter = params[i].strikeAfter.token;
                     uint256 amountBefore = params[i].strikeBefore.amount;
                     uint256 amountAfter = params[i].strikeAfter.amount;
+                    uint256 volumeBefore = params[i].strikeBefore.volume;
+                    uint256 volumeAfter = params[i].strikeAfter.volume;
 
                     if (tokenBefore == tokenAfter) {
+                        address token = tokenBefore == TokenSelector.Token0 ? params[i].token0 : params[i].token1;
+
                         if (amountBefore > amountAfter) {
-                            updateERC20(
-                                account,
-                                tokenBefore == TokenSelector.Token0 ? params[i].token0 : params[i].token1,
-                                amountBefore - amountAfter,
-                                false
-                            );
+                            updateERC20(account, token, amountBefore - amountAfter, false);
                         } else if (amountBefore < amountAfter) {
-                            updateERC20(
-                                account,
-                                tokenBefore == TokenSelector.Token0 ? params[i].token0 : params[i].token1,
-                                amountAfter - amountBefore,
-                                true
-                            );
+                            updateERC20(account, token, amountAfter - amountBefore, true);
                         }
 
-                        // TODO: Assert the user passed in the correct liquiditySwapGrowth variable.
+                        if (volumeBefore != volumeAfter) revert InvalidStrike();
                     } else {
-                        updateERC20(
-                            account,
-                            tokenBefore == TokenSelector.Token0 ? params[i].token0 : params[i].token1,
-                            amountBefore,
-                            false
-                        );
-                        updateERC20(
-                            account,
-                            tokenAfter == TokenSelector.Token0 ? params[i].token0 : params[i].token1,
-                            amountAfter,
-                            true
-                        );
+                        (address tokenIn, address tokenOut) = tokenBefore == TokenSelector.Token0
+                            ? (params[i].token1, params[i].token0)
+                            : (params[i].token0, params[i].token1);
 
-                        // TODO: Assert the user passed in the correct liquiditySwapGrowth variable.
+                        updateERC20(account, tokenOut, amountBefore, false);
+                        updateERC20(account, tokenIn, amountAfter, true);
+
+                        if (volumeBefore + params[i].strikeBefore.liquidity != volumeAfter) revert InvalidStrike();
                     }
                 }
             }
@@ -141,9 +159,7 @@ contract Engine is Position {
             transferTokens(account, to);
 
             uint256[] memory balancesBefore = getBalances(account, address(this));
-
             ICallback(msg.sender).callback(data);
-
             uint256[] memory balancesAfter = getBalances(account, address(this));
 
             for (uint256 i = 0; i < account.erc20DataOut.length; i++) {

@@ -4,8 +4,7 @@ pragma solidity ^0.8.0;
 import {Test} from "forge-std/Test.sol";
 import {MockERC20} from "solmate/src/test/utils/mocks/MockERC20.sol";
 
-import {ICallback, Engine} from "src/Engine.sol";
-import {getPairID} from "src/Pair.sol";
+import {ICallback, Engine, getPairID, StrikeData, TokenSelector} from "src/Engine.sol";
 import {Q128} from "src/Math.sol";
 import {Position} from "src/Position.sol";
 
@@ -37,18 +36,8 @@ contract ExecuteTest is Test, ICallback {
             token1: address(mockERC20_1),
             ratio: Q128,
             spread: 0,
-            strikeBefore: Engine.StrikeData({
-                token: Engine.TokenSelector.Token0,
-                amount: 0,
-                liquidity: 0,
-                liquiditySwapGrowth: 0
-            }),
-            strikeAfter: Engine.StrikeData({
-                token: Engine.TokenSelector.Token0,
-                amount: 1e18,
-                liquidity: 1e18,
-                liquiditySwapGrowth: 0
-            })
+            strikeBefore: StrikeData({token: TokenSelector.Token0, amount: 0, liquidity: 0, volume: 0}),
+            strikeAfter: StrikeData({token: TokenSelector.Token0, amount: 1e18, liquidity: 1e18, volume: 0})
         });
 
         amount0 = 1e18;
@@ -79,18 +68,8 @@ contract ExecuteTest is Test, ICallback {
             token1: address(mockERC20_1),
             ratio: Q128,
             spread: 0,
-            strikeBefore: Engine.StrikeData({
-                token: Engine.TokenSelector.Token0,
-                amount: 0,
-                liquidity: 0,
-                liquiditySwapGrowth: 0
-            }),
-            strikeAfter: Engine.StrikeData({
-                token: Engine.TokenSelector.Token0,
-                amount: 1e18,
-                liquidity: 1e18,
-                liquiditySwapGrowth: 0
-            })
+            strikeBefore: StrikeData({token: TokenSelector.Token0, amount: 0, liquidity: 0, volume: 0}),
+            strikeAfter: StrikeData({token: TokenSelector.Token0, amount: 1e18, liquidity: 1e18, volume: 0})
         });
 
         amount0 = 1e18;
@@ -102,18 +81,8 @@ contract ExecuteTest is Test, ICallback {
             token1: address(mockERC20_1),
             ratio: Q128,
             spread: 0,
-            strikeBefore: Engine.StrikeData({
-                token: Engine.TokenSelector.Token0,
-                amount: 1e18,
-                liquidity: 1e18,
-                liquiditySwapGrowth: 0
-            }),
-            strikeAfter: Engine.StrikeData({
-                token: Engine.TokenSelector.Token0,
-                amount: 2e18,
-                liquidity: 2e18,
-                liquiditySwapGrowth: 0
-            })
+            strikeBefore: StrikeData({token: TokenSelector.Token0, amount: 1e18, liquidity: 1e18, volume: 0}),
+            strikeAfter: StrikeData({token: TokenSelector.Token0, amount: 2e18, liquidity: 2e18, volume: 0})
         });
 
         vm.resumeGasMetering();
