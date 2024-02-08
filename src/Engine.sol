@@ -52,7 +52,7 @@ contract Engine is Position {
                                 STORAGE
     <//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\>*/
 
-    mapping(bytes32 pairID => mapping(bytes32 => bytes32)) public strikeHashes;
+    mapping(bytes32 pairID => mapping(bytes32 strikeID => bytes32)) public strikeHashes;
 
     /*<//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\>
                                  LOGIC
