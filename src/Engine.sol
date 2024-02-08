@@ -165,8 +165,7 @@ contract Engine is Position {
             for (uint256 i = 0; i < account.erc20DataOut.length; i++) {
                 if (account.erc20DataOut[i].token == address(0)) break;
 
-                // Note: Overflow is not handled
-                if (balancesBefore[i] + account.erc20DataOut[i].amount > balancesAfter[i]) revert InsufficientInput();
+                if (balancesBefore[i] + account.erc20DataOut[i].amount != balancesAfter[i]) revert InsufficientInput();
             }
         }
     }
