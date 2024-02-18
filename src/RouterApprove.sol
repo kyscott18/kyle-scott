@@ -2,9 +2,10 @@
 pragma solidity ^0.8.20;
 
 import {Engine, ICallback} from "./Engine.sol";
-import {Permit3} from "ilrta/src/Permit3.sol";
+import {ERC20} from "solmate/src/tokens/ERC20.sol";
+import {SafeTransferLib} from "solmate/src/utils/SafeTransferLib.sol";
 
-contract Router is ICallback {
+contract RouterApprove is ICallback {
     /*<//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\>
                                  ERRORS
     <//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\>*/
@@ -16,10 +17,14 @@ contract Router is ICallback {
                                DATA TYPES
     <//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\>*/
 
+    struct TokenAmount {
+        address token;
+        uint256 amount;
+    }
+
     struct CallbackData {
         address payer;
-        Permit3.SignatureTransferBatch signatureTransfer;
-        bytes signature;
+        TokenAmount[] tokenAmounts;
     }
 
     /*<//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\>
@@ -28,30 +33,20 @@ contract Router is ICallback {
 
     Engine public immutable engine;
 
-    Permit3 public immutable permit3;
-
     /*<//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\>
                               CONSTRUCTOR
     <//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\>*/
 
-    constructor(address payable _engine, address _permit3) {
+    constructor(address payable _engine) {
         engine = Engine(_engine);
-        permit3 = Permit3(_permit3);
     }
 
     /*<//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\>
                                  LOGIC
     <//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\>*/
 
-    function route(
-        Engine.Params[] calldata params,
-        address to,
-        Permit3.SignatureTransferBatch calldata signatureTransfer,
-        bytes calldata signature
-    )
-        external
-    {
-        CallbackData memory callbackData = CallbackData(msg.sender, signatureTransfer, signature);
+    function route(Engine.Params[] calldata params, address to, TokenAmount[] memory tokenAmounts) external {
+        CallbackData memory callbackData = CallbackData({payer: msg.sender, tokenAmounts: tokenAmounts});
 
         engine.execute(params, to, abi.encode(callbackData));
     }
@@ -62,19 +57,14 @@ contract Router is ICallback {
 
             CallbackData memory callbackData = abi.decode(data, (CallbackData));
 
-            Permit3.RequestedTransferDetails[] memory requestedTransfer =
-                new Permit3.RequestedTransferDetails[](callbackData.signatureTransfer.transferDetails.length);
-
-            for (uint256 i = 0; i < requestedTransfer.length; i++) {
-                requestedTransfer[i] = Permit3.RequestedTransferDetails({
-                    to: callbackData.payer,
-                    transferDetails: abi.encode(callbackData.signatureTransfer.transferDetails[i])
-                });
+            for (uint256 i = 0; i < callbackData.tokenAmounts.length; i++) {
+                SafeTransferLib.safeTransferFrom(
+                    ERC20(callbackData.tokenAmounts[i].token),
+                    callbackData.payer,
+                    msg.sender,
+                    callbackData.tokenAmounts[i].amount
+                );
             }
-
-            permit3.transferBySignature(
-                callbackData.payer, callbackData.signatureTransfer, requestedTransfer, callbackData.signature
-            );
         }
     }
 }

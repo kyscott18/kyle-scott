@@ -1,5 +1,7 @@
 import {
 	http,
+	type Address,
+	type Chain,
 	type Hex,
 	createPublicClient,
 	createWalletClient,
@@ -17,19 +19,35 @@ export const ACCOUNTS = [
 // Named accounts
 export const [ALICE, BOB] = ACCOUNTS;
 
+const anvil = {
+	...foundry, // We are using a mainnet fork for testing.
+	rpcUrls: {
+		// These rpc urls are automatically used in the transports.
+		default: {
+			// Note how we append the worker id to the local rpc urls.
+			http: ["http://127.0.0.1:8545/1"],
+			webSocket: ["ws://127.0.0.1:8545/1"],
+		},
+		public: {
+			// Note how we append the worker id to the local rpc urls.
+			http: ["http://127.0.0.1:8545/1"],
+			webSocket: ["ws://127.0.0.1:8545/1"],
+		},
+	},
+} as const satisfies Chain;
+
 export const publicClient = createPublicClient({
-	chain: foundry,
+	chain: anvil,
 	transport: http(),
 });
 
 export const walletClient = createWalletClient({
-	chain: foundry,
+	chain: anvil,
 	transport: http(),
 	account: ALICE,
 });
 
 export const mockErc20Abi = parseAbi([
-	"constructor(string _name, string  _symbol, uint8 _decimals)",
 	"function approve(address spender, uint256 amount)",
 	"function transfer(address to, uint256 amount)",
 	"function transferFrom(address from, address to, uint256 amount)",
@@ -37,10 +55,30 @@ export const mockErc20Abi = parseAbi([
 	"function burn(address from, uint256 amount)",
 ]);
 
-export const deployErc20 = () =>
-	walletClient.deployContract({
-		account: ALICE,
+export const deployErc20 = async () => {
+	const hash = await walletClient.deployContract({
 		abi: mockErc20Abi,
 		bytecode: MockERC20Bytecode.bytecode.object as Hex,
-		args: ["name", "symbol", 18],
 	});
+
+	const receipt = await publicClient.waitForTransactionReceipt({ hash });
+
+	if (!receipt.contractAddress) throw Error("No contract address in receipt");
+
+	return receipt.contractAddress;
+};
+
+export const mintErc20 = async (
+	token: Address,
+	to: Address,
+	amount: bigint,
+) => {
+	const hash = await walletClient.writeContract({
+		abi: mockErc20Abi,
+		functionName: "mint",
+		address: token,
+		args: [to, amount],
+	});
+
+	await publicClient.waitForTransactionReceipt({ hash });
+};

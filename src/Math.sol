@@ -4,7 +4,7 @@ pragma solidity ^0.8.20;
 uint256 constant Q128 = 2 ** 128;
 
 /// @dev a * b >= c * d
-function mulgte(uint256 a, uint256 b, uint256 c, uint256 d) pure returns (bool) {
+function mulGte(uint256 a, uint256 b, uint256 c, uint256 d) pure returns (bool) {
     unchecked {
         uint256 r0 = a * b;
         uint256 s0 = c * d;

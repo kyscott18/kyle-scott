@@ -3,7 +3,9 @@
 	"devDependencies": {
 		"@biomejs/biome": "latest",
 		"@types/bun": "latest",
-		"@wagmi/cli": "latest"
+		"@viem/anvil": "latest",
+		"@wagmi/cli": "latest",
+		"viem": "latest"
 	},
 	"dependencies": {
 		"ds-test": "github:dapphub/ds-test",

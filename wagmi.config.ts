@@ -7,7 +7,7 @@ export default defineConfig({
 	plugins: [
 		foundry({
 			project: "./",
-			include: ["Engine.sol/**", "Router.sol/**"],
+			include: ["Engine.sol/**", "RouterApprove.sol/**"],
 		}),
 	],
 });
