@@ -2,6 +2,9 @@
 cache/
 out/
 
+# Codegen files
+generated.ts
+
 # dependencies
 /node_modules
 

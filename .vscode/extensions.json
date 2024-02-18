@@ -1,8 +1,8 @@
 {
-  "recommendations": [
-    "biomejs.biome",
-    "NomicFoundation.hardhat-solidity",
-    "tamasfe.even-better-toml",
-    "beaugunderson.solidity-extended"
-  ]
+	"recommendations": [
+		"biomejs.biome",
+		"NomicFoundation.hardhat-solidity",
+		"tamasfe.even-better-toml",
+		"beaugunderson.solidity-extended"
+	]
 }
