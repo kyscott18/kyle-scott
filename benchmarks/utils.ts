@@ -48,9 +48,9 @@ export const walletClient = createWalletClient({
 });
 
 export const mockErc20Abi = parseAbi([
-	"function approve(address spender, uint256 amount)",
-	"function transfer(address to, uint256 amount)",
-	"function transferFrom(address from, address to, uint256 amount)",
+	"function approve(address spender, uint256 amount) returns (bool)",
+	"function allowance(address owner, address spender) returns (uint256)",
+	"function balanceOf(address) returns (uint256)",
 	"function mint(address to, uint256 amount)",
 	"function burn(address from, uint256 amount)",
 ]);
@@ -78,6 +78,23 @@ export const mintErc20 = async (
 		functionName: "mint",
 		address: token,
 		args: [to, amount],
+	});
+
+	await publicClient.waitForTransactionReceipt({ hash });
+};
+
+export const approveErc20 = async (
+	token: Address,
+	owner: Address,
+	spender: Address,
+	amount: bigint,
+) => {
+	const hash = await walletClient.writeContract({
+		account: owner,
+		abi: mockErc20Abi,
+		functionName: "approve",
+		address: token,
+		args: [spender, amount],
 	});
 
 	await publicClient.waitForTransactionReceipt({ hash });

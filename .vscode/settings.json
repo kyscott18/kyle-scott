@@ -7,6 +7,9 @@
 	"[solidity]": {
 		"editor.defaultFormatter": "NomicFoundation.hardhat-solidity"
 	},
+	"[typescript]": {
+		"editor.defaultFormatter": "biomejs.biome"
+	},
 	"[json]": {
 		"editor.defaultFormatter": "biomejs.biome"
 	},
