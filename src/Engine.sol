@@ -135,10 +135,19 @@ contract Engine is Position {
             ICallback(msg.sender).callback(data);
             uint256[] memory balancesAfter = getBalances(account, address(this));
 
-            for (uint256 i = 0; i < account.erc20DataOut.length; i++) {
-                if (account.erc20DataOut[i].token == address(0)) break;
+            // Receive tokens
+            for (uint256 i = 0; i < account.erc20DataIn.length; i++) {
+                if (account.erc20DataIn[i].token == address(0)) break;
 
-                if (balancesBefore[i] + account.erc20DataOut[i].amount != balancesAfter[i]) revert InsufficientInput();
+                if (balancesBefore[i] + account.erc20DataIn[i].amount != balancesAfter[i]) revert InsufficientInput();
+            }
+
+            // Receive liquidity
+            for (uint256 i = 0; i < account.lpCount; i++) {
+                if (account.lpData[i].amount != _dataOf[address(this)][account.lpData[i].id].balance) {
+                    revert InsufficientInput();
+                }
+                _burn(address(this), account.lpData[i].id, account.lpData[i].amount);
             }
         }
     }
