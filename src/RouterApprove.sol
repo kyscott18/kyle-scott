@@ -1,7 +1,8 @@
-// SPDX-License-Identifier: UNLICENSED
+// SPDX-License-Identifier: AGPL-3.0-only
 pragma solidity ^0.8.20;
 
 import {Engine, ICallback} from "./Engine.sol";
+import {Position} from "./Position.sol";
 import {ERC20} from "solmate/src/tokens/ERC20.sol";
 import {SafeTransferLib} from "solmate/src/utils/SafeTransferLib.sol";
 
@@ -22,9 +23,15 @@ contract RouterApprove is ICallback {
         uint256 amount;
     }
 
+    struct LiquidityAmount {
+        bytes32 id;
+        uint256 amount;
+    }
+
     struct CallbackData {
         address payer;
         TokenAmount[] tokenAmounts;
+        LiquidityAmount[] liquidityAmounts;
     }
 
     /*<//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\>
@@ -45,8 +52,16 @@ contract RouterApprove is ICallback {
                                  LOGIC
     <//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\>*/
 
-    function route(Engine.Params[] calldata params, address to, TokenAmount[] memory tokenAmounts) external {
-        CallbackData memory callbackData = CallbackData({payer: msg.sender, tokenAmounts: tokenAmounts});
+    function route(
+        Engine.Params[] calldata params,
+        address to,
+        TokenAmount[] memory tokenAmounts,
+        LiquidityAmount[] memory liquidityAmounts
+    )
+        external
+    {
+        CallbackData memory callbackData =
+            CallbackData({payer: msg.sender, tokenAmounts: tokenAmounts, liquidityAmounts: liquidityAmounts});
 
         engine.execute(params, to, abi.encode(callbackData));
     }
@@ -63,6 +78,16 @@ contract RouterApprove is ICallback {
                     callbackData.payer,
                     msg.sender,
                     callbackData.tokenAmounts[i].amount
+                );
+            }
+
+            for (uint256 i = 0; i < callbackData.liquidityAmounts.length; i++) {
+                Engine(engine).transferFrom_XXXXX(
+                    callbackData.payer,
+                    msg.sender,
+                    Position.ILRTATransferDetails(
+                        callbackData.liquidityAmounts[i].id, callbackData.liquidityAmounts[i].amount
+                    )
                 );
             }
         }
