@@ -1,23 +1,23 @@
 {
-	"name": "kyle-scott",
-	"devDependencies": {
-		"@biomejs/biome": "latest",
-		"@types/bun": "latest",
-		"@viem/anvil": "latest",
-		"@wagmi/cli": "latest",
-		"viem": "latest"
-	},
-	"dependencies": {
-		"ds-test": "github:dapphub/ds-test",
-		"forge-std": "github:foundry-rs/forge-std",
-		"ilrta": "github:kyscott18/ilrta"
-	},
-	"private": "true",
-	"scripts": {
-		"build": "forge build",
-		"test": "forge test",
-		"format": "biome format . --write && forge fmt",
-		"clean": "rm -rf cache out",
-		"lint": "biome check ."
-	}
+  "name": "kyle-scott",
+  "devDependencies": {
+    "@biomejs/biome": "latest",
+    "@types/bun": "latest",
+    "@viem/anvil": "latest",
+    "@wagmi/cli": "latest",
+    "viem": "latest"
+  },
+  "dependencies": {
+    "ds-test": "github:dapphub/ds-test",
+    "forge-std": "github:foundry-rs/forge-std",
+    "ilrta": "github:kyscott18/ilrta"
+  },
+  "private": "true",
+  "scripts": {
+    "build": "forge build",
+    "test": "forge test",
+    "format": "biome format . --write && forge fmt",
+    "clean": "rm -rf cache out",
+    "lint": "biome check ."
+  }
 }

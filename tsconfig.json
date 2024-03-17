@@ -24,7 +24,6 @@
     "noUnusedLocals": true, // Not enabled by default in `strict` mode.
     "noUnusedParameters": true, // Not enabled by default in `strict` mode.
     "exactOptionalPropertyTypes": true,
-    "noUncheckedIndexedAccess": true,
+    "noUncheckedIndexedAccess": true
   }
 }
-
