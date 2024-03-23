@@ -22,7 +22,7 @@ Many assumptions are made about the information and motivation of interacting ac
 
 ## Technical
 
-Simplicity is the soul of good engineering.
+_Simplicity is the soul of good engineering._
 
 The main invariant of the protocol is `x + p * y = l`. This invariant is enforced on each action. "p" represents the exchange rate, in units x per y. An exchange is uniquely identified by a token pair and exchange rate.
 
