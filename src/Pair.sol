@@ -11,10 +11,10 @@ function isStrikeValid(uint256 _ratio, int256 drift, StrikeData memory strikeDat
         } else {
             uint256 ratio;
             if (drift > 0) {
-                ratio = _ratio + uint128(block.number) * uint128(int128(drift));
+                ratio = _ratio + block.number * uint256(drift);
                 if (ratio < _ratio) ratio = type(uint256).max;
             } else {
-                ratio = _ratio - uint128(block.number) * uint128(int128(-drift));
+                ratio = _ratio - block.number * uint256(-drift);
                 if (ratio > _ratio) ratio = 0;
             }
             return mulGte(strikeData.amount, ratio, strikeData.liquidity, Q128);
