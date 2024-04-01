@@ -15,7 +15,7 @@ contract IsStrikeValidTest is Test {
 
         vm.resumeGasMetering();
 
-        bool result = isStrikeValid(0, strikeData);
+        bool result = isStrikeValid(0, 0, strikeData);
 
         vm.pauseGasMetering();
 
@@ -31,7 +31,7 @@ contract IsStrikeValidTest is Test {
 
         vm.resumeGasMetering();
 
-        bool result = isStrikeValid(0, strikeData);
+        bool result = isStrikeValid(0, 0, strikeData);
 
         vm.pauseGasMetering();
 
@@ -47,7 +47,7 @@ contract IsStrikeValidTest is Test {
 
         vm.resumeGasMetering();
 
-        bool result = isStrikeValid(Q128, strikeData);
+        bool result = isStrikeValid(Q128, 0, strikeData);
 
         vm.pauseGasMetering();
 
@@ -63,7 +63,7 @@ contract IsStrikeValidTest is Test {
 
         vm.resumeGasMetering();
 
-        bool result = isStrikeValid(Q128, strikeData);
+        bool result = isStrikeValid(Q128, 0, strikeData);
 
         vm.pauseGasMetering();
 

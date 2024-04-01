@@ -4,10 +4,20 @@ pragma solidity ^0.8.20;
 import {StrikeData, TokenSelector} from "./Engine.sol";
 import {Q128, mulGte} from "./Math.sol";
 
-function isStrikeValid(uint256 ratio, StrikeData memory strikeData) pure returns (bool) {
-    if (strikeData.token == TokenSelector.Token0) {
-        return strikeData.liquidity <= strikeData.amount;
-    } else {
-        return mulGte(strikeData.amount, ratio, strikeData.liquidity, Q128);
+function isStrikeValid(uint256 _ratio, int256 drift, StrikeData memory strikeData) view returns (bool) {
+    unchecked {
+        if (strikeData.token == TokenSelector.Token0) {
+            return strikeData.liquidity <= strikeData.amount;
+        } else {
+            uint256 ratio;
+            if (drift > 0) {
+                ratio = _ratio + uint128(block.number) * uint128(int128(drift));
+                if (ratio < _ratio) ratio = type(uint256).max;
+            } else {
+                ratio = _ratio - uint128(block.number) * uint128(int128(-drift));
+                if (ratio > _ratio) ratio = 0;
+            }
+            return mulGte(strikeData.amount, ratio, strikeData.liquidity, Q128);
+        }
     }
 }

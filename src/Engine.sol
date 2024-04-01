@@ -42,6 +42,7 @@ contract Engine is Position {
         address token0;
         address token1;
         uint256 ratio;
+        int256 drift;
         StrikeData strikeBefore;
         StrikeData strikeAfter;
     }
@@ -63,8 +64,9 @@ contract Engine is Position {
             for (uint256 i = 0; i < params.length; i++) {
                 // Update strikeHashes
                 {
+                    // Note: More efficient id generation is possible
                     bytes32 pairID = keccak256(abi.encodePacked(params[i].token0, params[i].token1));
-                    bytes32 strikeID = bytes32(params[i].ratio);
+                    bytes32 strikeID = bytes32(abi.encodePacked(params[i].ratio, params[i].drift));
                     bytes32 strikeHash = strikeHashes[pairID][strikeID];
                     bytes32 _strikeHash = keccak256(abi.encode(params[i].strikeBefore));
 
@@ -77,7 +79,7 @@ contract Engine is Position {
                     }
 
                     // Validate strikeAfter
-                    if (!isStrikeValid(params[i].ratio, params[i].strikeAfter)) {
+                    if (!isStrikeValid(params[i].ratio, params[i].drift, params[i].strikeAfter)) {
                         revert InvalidStrike();
                     }
 
