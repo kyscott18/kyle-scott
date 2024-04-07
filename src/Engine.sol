@@ -43,7 +43,7 @@ contract Engine is Position {
         address token0;
         address token1;
         uint256 ratio;
-        // uint256 spread;
+        uint256 spread;
         int256 drift;
         StrikeData strikeBefore;
         StrikeData strikeAfter;
@@ -82,7 +82,7 @@ contract Engine is Position {
                     }
 
                     // Validate strikeAfter
-                    if (!isStrikeValid(params[i].ratio, params[i].drift, params[i].strikeAfter)) {
+                    if (!isStrikeValid(params[i].ratio, params[i].spread, params[i].drift, params[i].strikeAfter)) {
                         revert InvalidStrike();
                     }
 

@@ -4,7 +4,15 @@ pragma solidity ^0.8.20;
 import {StrikeData, TokenSelector} from "./Engine.sol";
 import {Q128, mulGte} from "./Math.sol";
 
-function isStrikeValid(uint256 _ratio, int256 drift, StrikeData memory strikeData) view returns (bool) {
+function isStrikeValid(
+    uint256 _ratio,
+    uint256 spread,
+    int256 drift,
+    StrikeData memory strikeData
+)
+    view
+    returns (bool)
+{
     unchecked {
         if (strikeData.token == TokenSelector.Token0) {
             return strikeData.liquidity <= strikeData.amount;

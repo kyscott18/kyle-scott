@@ -48,6 +48,7 @@ contract ExecuteTest is Test, ICallback {
             token0: address(mockERC20_0),
             token1: address(mockERC20_1),
             ratio: Q128,
+            spread: 0,
             drift: 0,
             strikeBefore: StrikeData({token: TokenSelector.Token0, amount: 0, liquidity: 0, volume: 0}),
             strikeAfter: StrikeData({token: TokenSelector.Token0, amount: 1e18, liquidity: 1e18, volume: 0})
@@ -76,6 +77,7 @@ contract ExecuteTest is Test, ICallback {
             token0: address(mockERC20_0),
             token1: address(mockERC20_1),
             ratio: Q128,
+            spread: 0,
             drift: 0,
             strikeBefore: StrikeData({token: TokenSelector.Token0, amount: 0, liquidity: 0, volume: 0}),
             strikeAfter: StrikeData({token: TokenSelector.Token0, amount: 1e18, liquidity: 1e18, volume: 0})
@@ -89,6 +91,7 @@ contract ExecuteTest is Test, ICallback {
             token0: address(mockERC20_0),
             token1: address(mockERC20_1),
             ratio: Q128,
+            spread: 0,
             drift: 0,
             strikeBefore: StrikeData({token: TokenSelector.Token0, amount: 1e18, liquidity: 1e18, volume: 0}),
             strikeAfter: StrikeData({token: TokenSelector.Token0, amount: 2e18, liquidity: 2e18, volume: 0})
@@ -115,6 +118,7 @@ contract ExecuteTest is Test, ICallback {
             token0: address(mockERC20_0),
             token1: address(mockERC20_1),
             ratio: Q128,
+            spread: 0,
             drift: 0,
             strikeBefore: StrikeData({token: TokenSelector.Token0, amount: 0, liquidity: 0, volume: 0}),
             strikeAfter: StrikeData({token: TokenSelector.Token0, amount: 1e18, liquidity: 1e18, volume: 0})
@@ -130,6 +134,7 @@ contract ExecuteTest is Test, ICallback {
             token0: address(mockERC20_0),
             token1: address(mockERC20_1),
             ratio: Q128,
+            spread: 0,
             drift: 0,
             strikeBefore: StrikeData({token: TokenSelector.Token0, amount: 1e18, liquidity: 1e18, volume: 0}),
             strikeAfter: StrikeData({token: TokenSelector.Token0, amount: 0, liquidity: 0, volume: 0})
@@ -158,6 +163,7 @@ contract ExecuteTest is Test, ICallback {
             token0: address(mockERC20_0),
             token1: address(mockERC20_1),
             ratio: Q128,
+            spread: 0,
             drift: 0,
             strikeBefore: StrikeData({token: TokenSelector.Token0, amount: 0, liquidity: 0, volume: 0}),
             strikeAfter: StrikeData({token: TokenSelector.Token0, amount: 1e18, liquidity: 1e18, volume: 0})
@@ -173,6 +179,7 @@ contract ExecuteTest is Test, ICallback {
             token0: address(mockERC20_0),
             token1: address(mockERC20_1),
             ratio: Q128,
+            spread: 0,
             drift: 0,
             strikeBefore: StrikeData({token: TokenSelector.Token0, amount: 1e18, liquidity: 1e18, volume: 0}),
             strikeAfter: StrikeData({token: TokenSelector.Token1, amount: 1e18, liquidity: 1e18, volume: 1e18})
