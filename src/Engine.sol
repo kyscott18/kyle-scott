@@ -74,6 +74,11 @@ contract Engine is Position {
 
                     // Validate strikeBefore
                     if (strikeHash == bytes32(0)) {
+                        // Validate ratio + spread combination
+                        uint256 ratio = params[i].ratio;
+                        uint256 spread = params[i].spread;
+                        if (spread > ratio || spread + ratio < ratio) revert InvalidStrike();
+
                         // Set strikeBefore to default value
                         params[i].strikeBefore =
                             StrikeData({token: TokenSelector.Token0, amount: 0, liquidity: 0, volume: 0});

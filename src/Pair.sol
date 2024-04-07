@@ -15,15 +15,15 @@ function isStrikeValid(
 {
     unchecked {
         if (strikeData.token == TokenSelector.Token0) {
-            return strikeData.liquidity <= strikeData.amount;
+            return strikeData.amount >= strikeData.liquidity;
         } else {
             uint256 ratio;
             if (drift > 0) {
-                ratio = _ratio + block.number * uint256(drift);
-                if (ratio < _ratio) ratio = type(uint256).max;
+                ratio = (_ratio - spread) + block.number * uint256(drift);
+                if (ratio < _ratio - spread) ratio = type(uint256).max;
             } else {
-                ratio = _ratio - block.number * uint256(-drift);
-                if (ratio > _ratio) ratio = 0;
+                ratio = (_ratio - spread) - block.number * uint256(-drift);
+                if (ratio > _ratio - spread) ratio = 0;
             }
             return mulGte(strikeData.amount, ratio, strikeData.liquidity, Q128);
         }
