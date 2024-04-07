@@ -11,7 +11,8 @@ contract IsStrikeValidTest is Test {
     function test_IsStrikeValid_Token0() external {
         vm.pauseGasMetering();
 
-        StrikeData memory strikeData = StrikeData({token: TokenSelector.Token0, amount: 1e18, liquidity: 1e18});
+        StrikeData memory strikeData =
+            StrikeData({token: TokenSelector.Token0, amount: 1e18, liquidity: 1e18, volume: 0});
 
         vm.resumeGasMetering();
 
@@ -27,7 +28,8 @@ contract IsStrikeValidTest is Test {
     function test_IsStrikeValid_Token0False() external {
         vm.pauseGasMetering();
 
-        StrikeData memory strikeData = StrikeData({token: TokenSelector.Token0, amount: 1e18 - 1, liquidity: 1e18});
+        StrikeData memory strikeData =
+            StrikeData({token: TokenSelector.Token0, amount: 1e18 - 1, liquidity: 1e18, volume: 0});
 
         vm.resumeGasMetering();
 
@@ -43,7 +45,8 @@ contract IsStrikeValidTest is Test {
     function test_IsStrikeValid_Token1() external {
         vm.pauseGasMetering();
 
-        StrikeData memory strikeData = StrikeData({token: TokenSelector.Token1, amount: 1e18, liquidity: 1e18});
+        StrikeData memory strikeData =
+            StrikeData({token: TokenSelector.Token1, amount: 1e18, liquidity: 1e18, volume: 0});
 
         vm.resumeGasMetering();
 
@@ -59,7 +62,8 @@ contract IsStrikeValidTest is Test {
     function test_IsStrikeValid_Token1False() external {
         vm.pauseGasMetering();
 
-        StrikeData memory strikeData = StrikeData({token: TokenSelector.Token1, amount: 1e18 - 1, liquidity: 1e18});
+        StrikeData memory strikeData =
+            StrikeData({token: TokenSelector.Token1, amount: 1e18 - 1, liquidity: 1e18, volume: 0});
 
         vm.resumeGasMetering();
 

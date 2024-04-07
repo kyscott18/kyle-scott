@@ -21,6 +21,7 @@ struct StrikeData {
     TokenSelector token;
     uint256 amount;
     uint256 liquidity;
+    uint256 volume;
 }
 
 contract Engine is Position {
@@ -42,6 +43,7 @@ contract Engine is Position {
         address token0;
         address token1;
         uint256 ratio;
+        // uint256 spread;
         int256 drift;
         StrikeData strikeBefore;
         StrikeData strikeAfter;
@@ -73,7 +75,8 @@ contract Engine is Position {
                     // Validate strikeBefore
                     if (strikeHash == bytes32(0)) {
                         // Set strikeBefore to default value
-                        params[i].strikeBefore = StrikeData({token: TokenSelector.Token0, amount: 0, liquidity: 0});
+                        params[i].strikeBefore =
+                            StrikeData({token: TokenSelector.Token0, amount: 0, liquidity: 0, volume: 0});
                     } else if (strikeHash != _strikeHash) {
                         revert InvalidStrikeHash();
                     }
@@ -111,6 +114,8 @@ contract Engine is Position {
                     TokenSelector tokenAfter = params[i].strikeAfter.token;
                     uint256 amountBefore = params[i].strikeBefore.amount;
                     uint256 amountAfter = params[i].strikeAfter.amount;
+                    uint256 volumeBefore = params[i].strikeBefore.volume;
+                    uint256 volumeAfter = params[i].strikeAfter.volume;
 
                     if (tokenBefore == tokenAfter) {
                         address token = tokenBefore == TokenSelector.Token0 ? params[i].token0 : params[i].token1;
@@ -120,6 +125,8 @@ contract Engine is Position {
                         } else if (amountBefore < amountAfter) {
                             updateERC20(account, token, amountAfter - amountBefore, true);
                         }
+
+                        if (volumeBefore != volumeAfter) revert InvalidStrike();
                     } else {
                         (address tokenIn, address tokenOut) = tokenBefore == TokenSelector.Token0
                             ? (params[i].token1, params[i].token0)
@@ -127,6 +134,8 @@ contract Engine is Position {
 
                         updateERC20(account, tokenOut, amountBefore, false);
                         updateERC20(account, tokenIn, amountAfter, true);
+
+                        if (volumeBefore + params[i].strikeBefore.liquidity != volumeAfter) revert InvalidStrike();
                     }
                 }
             }
