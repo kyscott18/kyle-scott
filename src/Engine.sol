@@ -8,7 +8,7 @@ import {ERC20} from "solmate/src/tokens/ERC20.sol";
 import {SafeTransferLib} from "solmate/src/utils/SafeTransferLib.sol";
 
 interface ICallback {
-    /// @param data Extra data passed back to the callback from the caller
+    /// @param data Extra data passed to the callback
     function callback(bytes calldata data) external;
 }
 
@@ -22,6 +22,7 @@ struct StrikeData {
     uint256 amount;
     uint256 liquidity;
     uint256 volume;
+    uint256 fee;
 }
 
 contract Engine is Position {
@@ -81,7 +82,7 @@ contract Engine is Position {
 
                         // Set strikeBefore to default value
                         params[i].strikeBefore =
-                            StrikeData({token: TokenSelector.Token0, amount: 0, liquidity: 0, volume: 0});
+                            StrikeData({token: TokenSelector.Token0, amount: 0, liquidity: 0, volume: 0, fee: 0});
                     } else if (strikeHash != _strikeHash) {
                         revert InvalidStrikeHash();
                     }
