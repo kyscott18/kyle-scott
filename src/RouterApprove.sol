@@ -53,7 +53,7 @@ contract RouterApprove is ICallback {
     <//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\>*/
 
     function route(
-        Engine.Params[] calldata params,
+        Engine.Trade[] calldata trades,
         address to,
         TokenAmount[] memory tokenAmounts,
         LiquidityAmount[] memory liquidityAmounts
@@ -63,7 +63,7 @@ contract RouterApprove is ICallback {
         CallbackData memory callbackData =
             CallbackData({payer: msg.sender, tokenAmounts: tokenAmounts, liquidityAmounts: liquidityAmounts});
 
-        engine.execute(params, to, abi.encode(callbackData));
+        engine.execute(trades, to, abi.encode(callbackData));
     }
 
     function callback(bytes calldata data) external {

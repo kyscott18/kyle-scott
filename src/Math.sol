@@ -1,10 +1,12 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
+// @notice
 uint256 constant Q128 = 2 ** 128;
 
-/// @dev a * b >= c * d
-function mulGte(uint256 a, uint256 b, uint256 c, uint256 d) pure returns (bool) {
+/// @notice
+/// @dev a * b == c * d
+function mulEq(uint256 a, uint256 b, uint256 c, uint256 d) pure returns (bool) {
     unchecked {
         uint256 r0 = a * b;
         uint256 s0 = c * d;
@@ -21,8 +23,6 @@ function mulGte(uint256 a, uint256 b, uint256 c, uint256 d) pure returns (bool) 
             s1 := sub(sub(mm, s0), lt(mm, s0))
         }
 
-        if (r1 > s1) return true;
-        if (r1 == s1) return r0 >= s0;
-        return false;
+        return r0 == s0 && r1 == s1;
     }
 }

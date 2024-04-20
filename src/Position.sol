@@ -3,6 +3,7 @@ pragma solidity ^0.8.20;
 
 import {ILRTA} from "ilrta/src/ILRTA.sol";
 
+/// @notice Tokenized position
 abstract contract Position is ILRTA("kyle scott", "kjs") {
     /*<//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\>
                                DATA TYPES
@@ -11,7 +12,9 @@ abstract contract Position is ILRTA("kyle scott", "kjs") {
     struct ILRTADataID {
         address token0;
         address token1;
-        uint256 strike;
+        uint256 ratio;
+        uint256 spread;
+        int256 drift;
     }
 
     struct ILRTAData {

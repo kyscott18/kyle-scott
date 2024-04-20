@@ -2,27 +2,70 @@
 pragma solidity ^0.8.20;
 
 import {Account, createAccount, updateERC20, updateLP, getBalances, transferTokens} from "./Account.sol";
-import {isStrikeValid} from "./Pair.sol";
+import {Q128, mulEq} from "./Math.sol";
 import {Position} from "./Position.sol";
 import {ERC20} from "solmate/src/tokens/ERC20.sol";
 import {SafeTransferLib} from "solmate/src/utils/SafeTransferLib.sol";
 
+/// @notice Interface for a periphery contract that settles trades
 interface ICallback {
-    /// @param data Extra data passed back to the callback from the caller
+    /// @param data Extra data passed to the callback
     function callback(bytes calldata data) external;
 }
 
-enum TokenSelector {
-    Token0,
-    Token1
+/// @notice Identifying information for an exchange
+/// @param token0 First token in the exchange
+/// @param token1 Second token in the exchange
+/// @param ratio Initial exchange rate as a Q128.128 value
+/// @param spread Difference between ratio and ...
+/// @param drift Change in ratio per block
+struct Exchange {
+    address token0;
+    address token1;
+    uint256 ratio;
+    uint256 spread;
+    int256 drift;
 }
 
-struct StrikeData {
-    TokenSelector token;
+/// @notice State of an individual exchange
+/// @param token "0" if the exchange holds its reserves in "token0", or "1" otherwise
+/// @param amount Balance of reserves
+/// @param liquidity Balance of issued liquidity
+/// @param volume Cumulative amount of liquidity that has been exchanged between "token0" and "token1"
+/// @param fee Amount of liquidity paid in fees currently held in the exchange
+struct ExchangeState {
+    uint8 token;
     uint256 amount;
     uint256 liquidity;
+    uint256 volume;
+    uint256 fee;
 }
 
+/// @notice Returns true if the exchange + state satisfy the protocol invariant
+function isExchangeStateValid(Exchange memory exchange, ExchangeState memory state) view returns (bool) {
+    unchecked {
+        if (!mulEq(state.fee, Q128, state.volume, exchange.spread)) return false;
+
+        if (state.token == 0) {
+            return state.amount == state.liquidity + state.fee;
+        } else {
+            uint256 ratio;
+            if (exchange.drift > 0) {
+                ratio = (exchange.ratio - exchange.spread) + block.number * uint256(exchange.drift);
+                if (ratio < exchange.ratio - exchange.spread) ratio = type(uint256).max;
+            } else if (exchange.drift < 0) {
+                ratio = (exchange.ratio - exchange.spread) - block.number * uint256(-exchange.drift);
+                if (ratio > exchange.ratio - exchange.spread) ratio = 0;
+            } else {
+                ratio = exchange.ratio - exchange.spread;
+            }
+
+            return mulEq(state.amount, ratio, state.liquidity + state.fee, Q128);
+        }
+    }
+}
+
+/// @notice ...
 contract Engine is Position {
     /*<//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\>
                                  ERRORS
@@ -30,101 +73,111 @@ contract Engine is Position {
 
     error InsufficientInput();
 
-    error InvalidStrikeHash();
-
-    error InvalidStrike();
+    error InvalidExchange();
 
     /*<//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\>
                                DATA TYPES
     <//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\>*/
 
-    struct Params {
-        address token0;
-        address token1;
-        uint256 ratio;
-        StrikeData strikeBefore;
-        StrikeData strikeAfter;
+    /// @notice
+    /// @param Exchange
+    /// @param stateBefore
+    /// @param stateAfter
+    struct Trade {
+        Exchange exchange;
+        ExchangeState stateBefore;
+        ExchangeState stateAfter;
     }
 
     /*<//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\>
                                 STORAGE
     <//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\>*/
 
-    mapping(bytes32 pairID => mapping(bytes32 strikeID => bytes32)) public strikeHashes;
+    /// @notice keccak256 hash of the state of each exchange
+    mapping(bytes32 exchangeID => bytes32) public exchangeHashes;
 
     /*<//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\>
                                  LOGIC
     <//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\>*/
 
-    function execute(Params[] memory params, address to, bytes calldata data) external {
+    /// @notice Performs a series of trades, and settles the aggregate by calling into a callback
+    /// @param trades Instructions of which trades to execute
+    /// @param to Recipient of the output of the trades
+    /// @param data Extra data passed to the callback function of the msg.sender
+    function execute(Trade[] memory trades, address to, bytes calldata data) external {
         unchecked {
-            Account memory account = createAccount(params.length);
+            Account memory account = createAccount(trades.length);
 
-            for (uint256 i = 0; i < params.length; i++) {
-                // Update strikeHashes
+            for (uint256 i = 0; i < trades.length; i++) {
+                bytes32 exchangeID = bytes32(keccak256(abi.encode(trades[i].exchange)));
+
+                // Update exchangeHashes
                 {
-                    bytes32 pairID = keccak256(abi.encodePacked(params[i].token0, params[i].token1));
-                    bytes32 strikeID = bytes32(params[i].ratio);
-                    bytes32 strikeHash = strikeHashes[pairID][strikeID];
-                    bytes32 _strikeHash = keccak256(abi.encode(params[i].strikeBefore));
+                    bytes32 exchangeHash = exchangeHashes[exchangeID];
+                    bytes32 _exchangeHash = keccak256(abi.encode(trades[i].stateBefore));
 
-                    // Validate strikeBefore
-                    if (strikeHash == bytes32(0)) {
-                        // Set strikeBefore to default value
-                        params[i].strikeBefore = StrikeData({token: TokenSelector.Token0, amount: 0, liquidity: 0});
-                    } else if (strikeHash != _strikeHash) {
-                        revert InvalidStrikeHash();
+                    // Validate exchangeBefore
+                    if (exchangeHash == bytes32(0)) {
+                        // Validate ratio + spread combination
+                        uint256 ratio = trades[i].exchange.ratio;
+                        uint256 spread = trades[i].exchange.spread;
+                        if (spread > ratio || spread + ratio < ratio) revert InvalidExchange();
+
+                        // Set stateBefore to default value
+                        trades[i].stateBefore = ExchangeState({token: 0, amount: 0, liquidity: 0, volume: 0, fee: 0});
+                    } else if (exchangeHash != _exchangeHash) {
+                        revert InvalidExchange();
                     }
 
-                    // Validate strikeAfter
-                    if (!isStrikeValid(params[i].ratio, params[i].strikeAfter)) {
-                        revert InvalidStrike();
+                    // Validate stateAfter
+                    if (!isExchangeStateValid(trades[i].exchange, trades[i].stateAfter)) {
+                        revert InvalidExchange();
                     }
 
-                    // Set strikeHash
-                    strikeHashes[pairID][strikeID] = keccak256(abi.encode(params[i].strikeAfter));
+                    // Set exchangeHash
+                    exchangeHashes[exchangeID] = keccak256(abi.encode(trades[i].stateAfter));
                 }
 
                 // Update changes in liquidity
                 {
-                    bytes32 positionID = keccak256(
-                        abi.encode(
-                            ILRTADataID({token0: params[i].token0, token1: params[i].token1, strike: params[i].ratio})
-                        )
-                    );
+                    uint256 stateBeforeLiquidity = trades[i].stateBefore.liquidity;
+                    uint256 stateAfterLiquidity = trades[i].stateAfter.liquidity;
 
-                    uint256 strikeBeforeLiquidity = params[i].strikeBefore.liquidity;
-                    uint256 strikeAfterLiquidity = params[i].strikeAfter.liquidity;
-
-                    if (strikeBeforeLiquidity > strikeAfterLiquidity) {
-                        updateLP(account, positionID, strikeBeforeLiquidity - strikeAfterLiquidity);
-                    } else if (strikeBeforeLiquidity < strikeAfterLiquidity) {
-                        _mint(to, positionID, strikeAfterLiquidity - strikeBeforeLiquidity);
+                    if (stateBeforeLiquidity > stateAfterLiquidity) {
+                        updateLP(account, exchangeID, stateBeforeLiquidity - stateAfterLiquidity);
+                    } else if (stateBeforeLiquidity < stateAfterLiquidity) {
+                        _mint(to, exchangeID, stateAfterLiquidity - stateBeforeLiquidity);
                     }
                 }
 
                 // Update changes in token amounts
                 {
-                    TokenSelector tokenBefore = params[i].strikeBefore.token;
-                    TokenSelector tokenAfter = params[i].strikeAfter.token;
-                    uint256 amountBefore = params[i].strikeBefore.amount;
-                    uint256 amountAfter = params[i].strikeAfter.amount;
+                    uint8 tokenBefore = trades[i].stateBefore.token;
+                    uint8 tokenAfter = trades[i].stateAfter.token;
+                    uint256 amountBefore = trades[i].stateBefore.amount;
+                    uint256 amountAfter = trades[i].stateAfter.amount;
+                    uint256 volumeBefore = trades[i].stateBefore.volume;
+                    uint256 volumeAfter = trades[i].stateAfter.volume;
 
                     if (tokenBefore == tokenAfter) {
-                        address token = tokenBefore == TokenSelector.Token0 ? params[i].token0 : params[i].token1;
+                        address token = tokenBefore == 0 ? trades[i].exchange.token0 : trades[i].exchange.token1;
 
                         if (amountBefore > amountAfter) {
                             updateERC20(account, token, amountBefore - amountAfter, false);
                         } else if (amountBefore < amountAfter) {
                             updateERC20(account, token, amountAfter - amountBefore, true);
                         }
+
+                        if (volumeBefore != volumeAfter) revert InvalidExchange();
                     } else {
-                        (address tokenIn, address tokenOut) = tokenBefore == TokenSelector.Token0
-                            ? (params[i].token1, params[i].token0)
-                            : (params[i].token0, params[i].token1);
+                        (address tokenIn, address tokenOut) = tokenBefore == 0
+                            ? (trades[i].exchange.token1, trades[i].exchange.token0)
+                            : (trades[i].exchange.token0, trades[i].exchange.token1);
 
                         updateERC20(account, tokenOut, amountBefore, false);
                         updateERC20(account, tokenIn, amountAfter, true);
+
+                        if (volumeBefore + trades[i].stateBefore.liquidity != volumeAfter) revert InvalidExchange();
                     }
                 }
             }
