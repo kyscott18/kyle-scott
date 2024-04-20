@@ -7,24 +7,27 @@ import {Position} from "./Position.sol";
 import {ERC20} from "solmate/src/tokens/ERC20.sol";
 import {SafeTransferLib} from "solmate/src/utils/SafeTransferLib.sol";
 
+/// @notice Interface for a periphery contract that settles trades
 interface ICallback {
     /// @param data Extra data passed to the callback
     function callback(bytes calldata data) external;
 }
 
-enum TokenSelector {
-    Token0,
-    Token1
-}
-
+/// @notice Storage data for an individual strike
+/// @param token "0" if the strike holds its reserves in "token0", or "1" otherwise
+/// @param amount Balance of reserves of the strike
+/// @param liquidity Amount of issued liquidity
+/// @param volume Cumulative amount of liquidity that has been exchanged between "token0" and "token1"
+/// @param fee Amount of liquidity paid in fees currently held in the strike
 struct StrikeData {
-    TokenSelector token;
+    uint8 token;
     uint256 amount;
     uint256 liquidity;
     uint256 volume;
     uint256 fee;
 }
 
+/// @notice Exchange and Liquidity Management Protocol
 contract Engine is Position {
     /*<//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\>
                                  ERRORS
@@ -32,14 +35,20 @@ contract Engine is Position {
 
     error InsufficientInput();
 
-    error InvalidStrikeHash();
-
     error InvalidStrike();
 
     /*<//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\>
                                DATA TYPES
     <//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\>*/
 
+    /// @notice
+    /// @param token0
+    /// @param token1
+    /// @param ratio
+    /// @param spread
+    /// @param drift
+    /// @param strikeBefore
+    /// @param strikeAfter
     struct Params {
         address token0;
         address token1;
@@ -54,23 +63,33 @@ contract Engine is Position {
                                 STORAGE
     <//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\>*/
 
-    mapping(bytes32 pairID => mapping(bytes32 strikeID => bytes32)) public strikeHashes;
+    /// @notice keccak256 hash of the state of each exchange
+    mapping(bytes32 strikeID => bytes32) public strikeHashes;
 
     /*<//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\>
                                  LOGIC
     <//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\>*/
 
+    /// @notice Performs a series of trades
+    /// @param params Instructions of which trades to execute
+    /// @param to Recipient of the output of the trades
+    /// @param data Extra data passed to the callback function of the msg.sender
     function execute(Params[] memory params, address to, bytes calldata data) external {
         unchecked {
             Account memory account = createAccount(params.length);
 
             for (uint256 i = 0; i < params.length; i++) {
+                bytes32 strikeID = bytes32(
+                    keccak256(
+                        abi.encode(
+                            params[i].token0, params[i].token1, params[i].ratio, params[i].spread, params[i].drift
+                        )
+                    )
+                );
+
                 // Update strikeHashes
                 {
-                    // Note: More efficient id generation is possible
-                    bytes32 pairID = keccak256(abi.encodePacked(params[i].token0, params[i].token1));
-                    bytes32 strikeID = bytes32(abi.encodePacked(params[i].ratio, params[i].drift));
-                    bytes32 strikeHash = strikeHashes[pairID][strikeID];
+                    bytes32 strikeHash = strikeHashes[strikeID];
                     bytes32 _strikeHash = keccak256(abi.encode(params[i].strikeBefore));
 
                     // Validate strikeBefore
@@ -81,10 +100,9 @@ contract Engine is Position {
                         if (spread > ratio || spread + ratio < ratio) revert InvalidStrike();
 
                         // Set strikeBefore to default value
-                        params[i].strikeBefore =
-                            StrikeData({token: TokenSelector.Token0, amount: 0, liquidity: 0, volume: 0, fee: 0});
+                        params[i].strikeBefore = StrikeData({token: 0, amount: 0, liquidity: 0, volume: 0, fee: 0});
                     } else if (strikeHash != _strikeHash) {
-                        revert InvalidStrikeHash();
+                        revert InvalidStrike();
                     }
 
                     // Validate strikeAfter
@@ -93,38 +111,32 @@ contract Engine is Position {
                     }
 
                     // Set strikeHash
-                    strikeHashes[pairID][strikeID] = keccak256(abi.encode(params[i].strikeAfter));
+                    strikeHashes[strikeID] = keccak256(abi.encode(params[i].strikeAfter));
                 }
 
                 // Update changes in liquidity
                 {
-                    bytes32 positionID = keccak256(
-                        abi.encode(
-                            ILRTADataID({token0: params[i].token0, token1: params[i].token1, strike: params[i].ratio})
-                        )
-                    );
-
                     uint256 strikeBeforeLiquidity = params[i].strikeBefore.liquidity;
                     uint256 strikeAfterLiquidity = params[i].strikeAfter.liquidity;
 
                     if (strikeBeforeLiquidity > strikeAfterLiquidity) {
-                        updateLP(account, positionID, strikeBeforeLiquidity - strikeAfterLiquidity);
+                        updateLP(account, strikeID, strikeBeforeLiquidity - strikeAfterLiquidity);
                     } else if (strikeBeforeLiquidity < strikeAfterLiquidity) {
-                        _mint(to, positionID, strikeAfterLiquidity - strikeBeforeLiquidity);
+                        _mint(to, strikeID, strikeAfterLiquidity - strikeBeforeLiquidity);
                     }
                 }
 
                 // Update changes in token amounts
                 {
-                    TokenSelector tokenBefore = params[i].strikeBefore.token;
-                    TokenSelector tokenAfter = params[i].strikeAfter.token;
+                    uint8 tokenBefore = params[i].strikeBefore.token;
+                    uint8 tokenAfter = params[i].strikeAfter.token;
                     uint256 amountBefore = params[i].strikeBefore.amount;
                     uint256 amountAfter = params[i].strikeAfter.amount;
                     uint256 volumeBefore = params[i].strikeBefore.volume;
                     uint256 volumeAfter = params[i].strikeAfter.volume;
 
                     if (tokenBefore == tokenAfter) {
-                        address token = tokenBefore == TokenSelector.Token0 ? params[i].token0 : params[i].token1;
+                        address token = tokenBefore == 0 ? params[i].token0 : params[i].token1;
 
                         if (amountBefore > amountAfter) {
                             updateERC20(account, token, amountBefore - amountAfter, false);
@@ -134,7 +146,7 @@ contract Engine is Position {
 
                         if (volumeBefore != volumeAfter) revert InvalidStrike();
                     } else {
-                        (address tokenIn, address tokenOut) = tokenBefore == TokenSelector.Token0
+                        (address tokenIn, address tokenOut) = tokenBefore == 0
                             ? (params[i].token1, params[i].token0)
                             : (params[i].token0, params[i].token1);
 

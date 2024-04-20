@@ -4,11 +4,17 @@ pragma solidity ^0.8.20;
 import {ERC20} from "solmate/src/tokens/ERC20.sol";
 import {SafeTransferLib} from "solmate/src/utils/SafeTransferLib.sol";
 
+/// @notice
+/// @param token
+/// @param amount
 struct ERC20Data {
     address token;
     uint256 amount;
 }
 
+/// @notice
+/// @param id
+/// @param amount
 struct LPData {
     bytes32 id;
     uint256 amount;
@@ -21,6 +27,8 @@ struct Account {
     uint256 lpCount;
 }
 
+/// @notice
+/// @param length
 function createAccount(uint256 length) pure returns (Account memory account) {
     unchecked {
         account.erc20DataIn = new ERC20Data[](length * 2);

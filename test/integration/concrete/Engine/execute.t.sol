@@ -12,7 +12,7 @@ contract ExecuteTest is Test, ICallback {
     Engine private engine;
     MockERC20 private mockERC20_0;
     MockERC20 private mockERC20_1;
-    bytes32 private positionID;
+    bytes32 private strikeID;
 
     uint256 private amount0;
     uint256 private amount1;
@@ -22,8 +22,16 @@ contract ExecuteTest is Test, ICallback {
         engine = new Engine();
         mockERC20_0 = new MockERC20("Mock ERC20", "MOCK", 18);
         mockERC20_1 = new MockERC20("Mock ERC20", "MOCK", 18);
-        positionID = keccak256(
-            abi.encode(Position.ILRTADataID({token0: address(mockERC20_0), token1: address(mockERC20_1), strike: Q128}))
+        strikeID = keccak256(
+            abi.encode(
+                Position.ILRTADataID({
+                    token0: address(mockERC20_0),
+                    token1: address(mockERC20_1),
+                    ratio: Q128,
+                    spread: 0,
+                    drift: 0
+                })
+            )
         );
 
         mockERC20_0.mint(address(this), 1);
@@ -36,7 +44,7 @@ contract ExecuteTest is Test, ICallback {
         if (amount0 > 0) mockERC20_0.mint(msg.sender, amount0);
         if (amount1 > 0) mockERC20_1.mint(msg.sender, amount1);
         if (liquidity > 0) {
-            engine.transfer_XXXXXX(msg.sender, Position.ILRTATransferDetails(positionID, liquidity));
+            engine.transfer_XXXXXX(msg.sender, Position.ILRTATransferDetails(strikeID, liquidity));
         }
     }
 
@@ -64,7 +72,7 @@ contract ExecuteTest is Test, ICallback {
 
         amount0 = 0;
 
-        assertEq(engine.dataOf_XXXXXX(address(this), positionID).balance, 1e18);
+        assertEq(engine.dataOf_XXXXXX(address(this), strikeID).balance, 1e18);
 
         vm.resumeGasMetering();
     }
@@ -105,7 +113,7 @@ contract ExecuteTest is Test, ICallback {
 
         amount0 = 0;
 
-        assertEq(engine.dataOf_XXXXXX(address(this), positionID).balance, 2e18);
+        assertEq(engine.dataOf_XXXXXX(address(this), strikeID).balance, 2e18);
 
         vm.resumeGasMetering();
     }

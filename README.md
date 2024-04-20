@@ -53,7 +53,7 @@ The protocol is not currently ready for production use. It lacks:
 ## Roadmap
 
 - [x] Basic
-- [ ] Fees
-- [ ] Drift
+- [x] Fees
+- [x] Drift
 - [ ] Leverage
 - [ ] Flatcoin

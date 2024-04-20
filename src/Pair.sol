@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 pragma solidity ^0.8.20;
 
-import {StrikeData, TokenSelector} from "./Engine.sol";
+import {StrikeData} from "./Engine.sol";
 import {Q128, mulEq} from "./Math.sol";
 
 function isStrikeValid(
@@ -14,8 +14,10 @@ function isStrikeValid(
     returns (bool)
 {
     unchecked {
-        if (strikeData.token == TokenSelector.Token0) {
-            return mulEq(strikeData.fee, Q128, strikeData.volume, spread) && strikeData.amount == strikeData.liquidity;
+        if (!mulEq(strikeData.fee, Q128, strikeData.volume, spread)) return false;
+
+        if (strikeData.token == 0) {
+            return strikeData.amount == strikeData.liquidity + strikeData.fee;
         } else {
             uint256 ratio;
             if (drift > 0) {
@@ -28,8 +30,7 @@ function isStrikeValid(
                 ratio = _ratio - spread;
             }
 
-            return mulEq(strikeData.fee, strikeData.volume, Q128, spread)
-                && mulEq(strikeData.amount, ratio, strikeData.liquidity, Q128);
+            return mulEq(strikeData.amount, ratio, strikeData.liquidity + strikeData.fee, Q128);
         }
     }
 }
