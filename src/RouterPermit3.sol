@@ -44,7 +44,7 @@ contract RouterPermit3 is ICallback {
     <//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\>*/
 
     function route(
-        Engine.Params[] calldata params,
+        Engine.Trade[] calldata trades,
         address to,
         Permit3.SignatureTransferBatch calldata signatureTransfer,
         bytes calldata signature
@@ -53,7 +53,7 @@ contract RouterPermit3 is ICallback {
     {
         CallbackData memory callbackData = CallbackData(msg.sender, signatureTransfer, signature);
 
-        engine.execute(params, to, abi.encode(callbackData));
+        engine.execute(trades, to, abi.encode(callbackData));
     }
 
     function callback(bytes calldata data) external {
