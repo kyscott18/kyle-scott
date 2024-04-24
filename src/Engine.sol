@@ -2,7 +2,7 @@
 pragma solidity ^0.8.20;
 
 import {Account, createAccount, updateERC20, updateLP, getBalances, transferTokens} from "./Account.sol";
-import {Q128, mulEq} from "./Math.sol";
+import {Q128, mulGte} from "./Math.sol";
 import {Position} from "./Position.sol";
 import {ERC20} from "solmate/src/tokens/ERC20.sol";
 import {SafeTransferLib} from "solmate/src/utils/SafeTransferLib.sol";
@@ -42,9 +42,10 @@ struct ExchangeState {
 }
 
 /// @notice Returns true if the exchange + state satisfy the protocol invariant
+/// @dev l <= x + p * y
 function isExchangeStateValid(Exchange memory exchange, ExchangeState memory state) view returns (bool) {
     unchecked {
-        if (!mulEq(state.fee, Q128, state.volume, exchange.spread)) return false;
+        if (!mulGte(state.fee, Q128, state.volume, exchange.spread)) return false;
 
         if (state.token == 0) {
             return state.amount == state.liquidity + state.fee;
@@ -60,7 +61,7 @@ function isExchangeStateValid(Exchange memory exchange, ExchangeState memory sta
                 ratio = exchange.ratio - exchange.spread;
             }
 
-            return mulEq(state.amount, ratio, state.liquidity + state.fee, Q128);
+            return mulGte(state.amount, ratio, state.liquidity + state.fee, Q128);
         }
     }
 }

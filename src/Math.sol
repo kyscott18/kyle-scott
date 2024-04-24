@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
-// @notice
 uint256 constant Q128 = 2 ** 128;
 
-/// @notice
-/// @dev a * b == c * d
-function mulEq(uint256 a, uint256 b, uint256 c, uint256 d) pure returns (bool) {
+/// @notice Returns true if a * b >= c * d
+/// @dev Prevents against intermediate values overflowing 256 bits
+/// @dev Credit to Remco Bloemen under MIT license https://xn--2-umb.com/21/muldiv
+function mulGte(uint256 a, uint256 b, uint256 c, uint256 d) pure returns (bool) {
     unchecked {
         uint256 r0 = a * b;
         uint256 s0 = c * d;
@@ -23,6 +23,8 @@ function mulEq(uint256 a, uint256 b, uint256 c, uint256 d) pure returns (bool) {
             s1 := sub(sub(mm, s0), lt(mm, s0))
         }
 
-        return r0 == s0 && r1 == s1;
+        if (r1 > s1) return true;
+
+        return (r1 == s1 && r0 >= s0);
     }
 }
