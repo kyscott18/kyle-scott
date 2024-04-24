@@ -6,8 +6,6 @@ import {Test} from "forge-std/Test.sol";
 import {Exchange, ExchangeState, isExchangeStateValid} from "src/Engine.sol";
 import {Q128} from "src/Math.sol";
 
-import {console2} from "forge-std/console2.sol";
-
 contract isExchangeStateValidTest is Test {
     function test_isExchangeStateValid_Token0() external {
         vm.pauseGasMetering();
