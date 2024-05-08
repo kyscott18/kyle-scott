@@ -31,13 +31,11 @@ struct Exchange {
 /// @param token "0" if the exchange holds its reserves in "token0", or "1" otherwise
 /// @param amount Balance of reserves
 /// @param liquidity Balance of issued liquidity
-/// @param volume Cumulative amount of liquidity that has been exchanged between "token0" and "token1"
-/// @param fee Amount of liquidity paid in fees currently held in the exchange
 struct ExchangeState {
     uint8 token;
+    uint248 volume;
     uint256 amount;
     uint256 liquidity;
-    uint256 volume;
     uint256 fee;
 }
 
@@ -45,37 +43,27 @@ struct ExchangeState {
 /// @dev l <= x + p * y
 function isExchangeStateValid(Exchange memory exchange, ExchangeState memory state) view returns (bool) {
     unchecked {
-        if (!mulGte(state.fee, Q128, state.volume, exchange.spread)) return false;
+        if (state.fee != 0 && !mulGte(state.fee, Q128, state.liquidity, exchange.spread)) return false;
 
         if (state.token == 0) {
-            return state.amount == state.liquidity + state.fee;
+            return state.amount == state.liquidity;
         } else {
             uint256 ratio;
             if (exchange.drift > 0) {
-                ratio = (exchange.ratio - exchange.spread) + block.number * uint256(exchange.drift);
-                if (ratio < exchange.ratio - exchange.spread) ratio = type(uint256).max;
+                ratio = (exchange.ratio) + block.number * uint256(exchange.drift);
+                if (ratio < exchange.ratio) ratio = type(uint256).max;
             } else if (exchange.drift < 0) {
-                ratio = (exchange.ratio - exchange.spread) - block.number * uint256(-exchange.drift);
-                if (ratio > exchange.ratio - exchange.spread) ratio = 0;
-            } else {
-                ratio = exchange.ratio - exchange.spread;
+                ratio = (exchange.ratio) - block.number * uint256(-exchange.drift);
+                if (ratio > exchange.ratio) ratio = 0;
             }
 
-            return mulGte(state.amount, ratio, state.liquidity + state.fee, Q128);
+            return mulGte(state.amount, ratio, state.liquidity, Q128);
         }
     }
 }
 
 /// @notice ...
 contract Engine is Position {
-    /*<//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\>
-                                 ERRORS
-    <//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\>*/
-
-    error InsufficientInput();
-
-    error InvalidExchange();
-
     /*<//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\>
                                DATA TYPES
     <//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\>*/
@@ -122,17 +110,17 @@ contract Engine is Position {
                         // Validate ratio + spread combination
                         uint256 ratio = trades[i].exchange.ratio;
                         uint256 spread = trades[i].exchange.spread;
-                        if (spread > ratio || spread + ratio < ratio) revert InvalidExchange();
+                        if (spread > ratio || spread + ratio < ratio) revert();
 
                         // Set stateBefore to default value
-                        trades[i].stateBefore = ExchangeState({token: 0, amount: 0, liquidity: 0, volume: 0, fee: 0});
+                        trades[i].stateBefore = ExchangeState({token: 0, volume: 0, amount: 0, liquidity: 0, fee: 0});
                     } else if (exchangeHash != _exchangeHash) {
-                        revert InvalidExchange();
+                        revert();
                     }
 
                     // Validate stateAfter
                     if (!isExchangeStateValid(trades[i].exchange, trades[i].stateAfter)) {
-                        revert InvalidExchange();
+                        revert();
                     }
 
                     // Set exchangeHash
@@ -141,13 +129,23 @@ contract Engine is Position {
 
                 // Update changes in liquidity
                 {
-                    uint256 stateBeforeLiquidity = trades[i].stateBefore.liquidity;
-                    uint256 stateAfterLiquidity = trades[i].stateAfter.liquidity;
+                    if (trades[i].stateBefore.token == trades[i].stateAfter.token) {
+                        uint256 stateBeforeLiquidity = trades[i].stateBefore.liquidity;
+                        uint256 stateAfterLiquidity = trades[i].stateAfter.liquidity;
 
-                    if (stateBeforeLiquidity > stateAfterLiquidity) {
-                        updateLP(account, exchangeID, stateBeforeLiquidity - stateAfterLiquidity);
-                    } else if (stateBeforeLiquidity < stateAfterLiquidity) {
-                        _mint(to, exchangeID, stateAfterLiquidity - stateBeforeLiquidity);
+                        if (stateBeforeLiquidity > stateAfterLiquidity) {
+                            updateLP(account, exchangeID, stateBeforeLiquidity - stateAfterLiquidity);
+                        } else if (stateBeforeLiquidity < stateAfterLiquidity) {
+                            _mint(to, exchangeID, stateAfterLiquidity - stateBeforeLiquidity);
+                        }
+
+                        if (trades[i].stateBefore.volume != trades[i].stateAfter.volume) revert();
+                    } else {
+                        uint256 fee = trades[i].stateAfter.fee;
+
+                        if (fee == 0) revert();
+                        if (trades[i].stateBefore.liquidity + fee != trades[i].stateAfter.liquidity) revert();
+                        if (trades[i].stateBefore.volume + 1 != trades[i].stateAfter.volume) revert();
                     }
                 }
 
@@ -157,8 +155,6 @@ contract Engine is Position {
                     uint8 tokenAfter = trades[i].stateAfter.token;
                     uint256 amountBefore = trades[i].stateBefore.amount;
                     uint256 amountAfter = trades[i].stateAfter.amount;
-                    uint256 volumeBefore = trades[i].stateBefore.volume;
-                    uint256 volumeAfter = trades[i].stateAfter.volume;
 
                     if (tokenBefore == tokenAfter) {
                         address token = tokenBefore == 0 ? trades[i].exchange.token0 : trades[i].exchange.token1;
@@ -168,8 +164,6 @@ contract Engine is Position {
                         } else if (amountBefore < amountAfter) {
                             updateERC20(account, token, amountAfter - amountBefore, true);
                         }
-
-                        if (volumeBefore != volumeAfter) revert InvalidExchange();
                     } else {
                         (address tokenIn, address tokenOut) = tokenBefore == 0
                             ? (trades[i].exchange.token1, trades[i].exchange.token0)
@@ -177,8 +171,6 @@ contract Engine is Position {
 
                         updateERC20(account, tokenOut, amountBefore, false);
                         updateERC20(account, tokenIn, amountAfter, true);
-
-                        if (volumeBefore + trades[i].stateBefore.liquidity != volumeAfter) revert InvalidExchange();
                     }
                 }
             }
@@ -193,13 +185,13 @@ contract Engine is Position {
             for (uint256 i = 0; i < account.erc20DataIn.length; i++) {
                 if (account.erc20DataIn[i].token == address(0)) break;
 
-                if (balancesBefore[i] + account.erc20DataIn[i].amount != balancesAfter[i]) revert InsufficientInput();
+                if (balancesBefore[i] + account.erc20DataIn[i].amount != balancesAfter[i]) revert();
             }
 
             // Receive liquidity
             for (uint256 i = 0; i < account.lpCount; i++) {
                 if (account.lpData[i].amount != _dataOf[address(this)][account.lpData[i].id].balance) {
-                    revert InsufficientInput();
+                    revert();
                 }
                 _burn(address(this), account.lpData[i].id, account.lpData[i].amount);
             }
