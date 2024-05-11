@@ -14,8 +14,8 @@ interface ICallback {
 }
 
 /// @notice Identifying information for an exchange
-/// @param token0 First token in the exchange
-/// @param token1 Second token in the exchange
+/// @param token0 Base token in the exchange
+/// @param token1 Quote token in the exchange
 /// @param ratio Initial exchange rate as a Q128.128 value
 /// @param spread Difference between ratio and ...
 /// @param drift Change in ratio per block
@@ -31,59 +31,89 @@ struct Exchange {
 /// @param token "0" if the exchange holds its reserves in "token0", or "1" otherwise
 /// @param amount Balance of reserves
 /// @param liquidity Balance of issued liquidity
+/// @param balance
 struct ExchangeState {
     uint8 token;
-    uint248 volume;
     uint256 amount;
     uint256 liquidity;
+    uint256 balance;
+}
+
+/// @notice
+/// @param exchange
+/// @param stateBefore
+/// @param stateAfter
+/// @param fee
+struct Trade {
+    Exchange exchange;
+    ExchangeState stateBefore;
+    ExchangeState stateAfter;
     uint256 fee;
 }
 
-/// @notice Returns true if the exchange + state satisfy the protocol invariant
-/// @dev l <= x + p * y
-function isExchangeStateValid(Exchange memory exchange, ExchangeState memory state) view returns (bool) {
+/// @notice Returns true if the trade satisfies the protocol invariant
+function isTradeValid(Trade memory trade) view returns (bool) {
     unchecked {
-        if (state.fee != 0 && !mulGte(state.fee, Q128, state.liquidity, exchange.spread)) return false;
-
-        if (state.token == 0) {
-            return state.amount == state.liquidity;
+        // Validate stateAfter invariant: l <= x + p * y
+        if (trade.stateAfter.token == 0) {
+            if (trade.stateAfter.amount != trade.stateAfter.liquidity) return false;
         } else {
             uint256 ratio;
-            if (exchange.drift > 0) {
-                ratio = (exchange.ratio) + block.number * uint256(exchange.drift);
-                if (ratio < exchange.ratio) ratio = type(uint256).max;
-            } else if (exchange.drift < 0) {
-                ratio = (exchange.ratio) - block.number * uint256(-exchange.drift);
-                if (ratio > exchange.ratio) ratio = 0;
+            if (trade.exchange.drift > 0) {
+                ratio = (trade.exchange.ratio) + block.number * uint256(trade.exchange.drift);
+                if (ratio < trade.exchange.ratio) ratio = type(uint256).max;
+            } else if (trade.exchange.drift < 0) {
+                ratio = (trade.exchange.ratio) - block.number * uint256(-trade.exchange.drift);
+                if (ratio > trade.exchange.ratio) ratio = 0;
             }
 
-            return mulGte(state.amount, ratio, state.liquidity, Q128);
+            if (mulGte(trade.stateAfter.amount, ratio, trade.stateAfter.liquidity, Q128) == false) return false;
         }
+
+        // Validate fee and balance changes
+        bool isSwap = trade.stateBefore.token != trade.stateAfter.token;
+        if (isSwap) {
+            if (mulGte(trade.fee, Q128, trade.stateAfter.liquidity, trade.exchange.spread) == false) return false;
+            if (trade.stateBefore.liquidity + trade.fee != trade.stateAfter.liquidity) return false;
+            if (trade.stateBefore.balance != trade.stateAfter.balance) return false;
+        } else {
+            if (trade.stateBefore.liquidity > trade.stateAfter.liquidity) {
+                if (trade.stateBefore.balance < trade.stateAfter.balance) return false;
+                if (
+                    mulGte(
+                        trade.stateBefore.balance - trade.stateAfter.balance,
+                        trade.stateBefore.liquidity,
+                        trade.stateBefore.liquidity - trade.stateAfter.liquidity,
+                        trade.stateBefore.balance
+                    ) == false
+                ) return false;
+            } else if (trade.stateBefore.liquidity < trade.stateAfter.liquidity) {
+                if (trade.stateBefore.balance < trade.stateAfter.balance) return false;
+                if (
+                    mulGte(
+                        trade.stateBefore.liquidity - trade.stateAfter.liquidity,
+                        trade.stateBefore.balance,
+                        trade.stateBefore.balance - trade.stateAfter.balance,
+                        trade.stateBefore.liquidity
+                    ) == false
+                ) return false;
+            } else {
+                if (trade.stateBefore.balance != trade.stateAfter.balance) return false;
+            }
+        }
+
+        return true;
     }
 }
 
 /// @notice ...
 contract Engine is Position {
     /*<//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\>
-                               DATA TYPES
-    <//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\>*/
-
-    /// @notice
-    /// @param Exchange
-    /// @param stateBefore
-    /// @param stateAfter
-    struct Trade {
-        Exchange exchange;
-        ExchangeState stateBefore;
-        ExchangeState stateAfter;
-    }
-
-    /*<//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\>
                                 STORAGE
     <//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\>*/
 
     /// @notice keccak256 hash of the state of each exchange
-    mapping(bytes32 exchangeID => bytes32) public exchangeHashes;
+    mapping(bytes32 exchangeID => bytes32) public stateHashes;
 
     /*<//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\>
                                  LOGIC
@@ -100,52 +130,42 @@ contract Engine is Position {
             for (uint256 i = 0; i < trades.length; i++) {
                 bytes32 exchangeID = bytes32(keccak256(abi.encode(trades[i].exchange)));
 
-                // Update exchangeHashes
+                // Update stateHashes
                 {
-                    bytes32 exchangeHash = exchangeHashes[exchangeID];
-                    bytes32 _exchangeHash = keccak256(abi.encode(trades[i].stateBefore));
+                    bytes32 stateHash = stateHashes[exchangeID];
+                    bytes32 _stateHash = keccak256(abi.encode(trades[i].stateBefore));
 
-                    // Validate exchangeBefore
-                    if (exchangeHash == bytes32(0)) {
+                    // Validate stateBefore
+                    if (stateHash == bytes32(0)) {
                         // Validate ratio + spread combination
                         uint256 ratio = trades[i].exchange.ratio;
                         uint256 spread = trades[i].exchange.spread;
                         if (spread > ratio || spread + ratio < ratio) revert();
 
                         // Set stateBefore to default value
-                        trades[i].stateBefore = ExchangeState({token: 0, volume: 0, amount: 0, liquidity: 0, fee: 0});
-                    } else if (exchangeHash != _exchangeHash) {
+                        trades[i].stateBefore = ExchangeState({token: 0, amount: 0, liquidity: 0, balance: 0});
+                    } else if (stateHash != _stateHash) {
                         revert();
                     }
 
-                    // Validate stateAfter
-                    if (!isExchangeStateValid(trades[i].exchange, trades[i].stateAfter)) {
+                    // Validate trade
+                    if (!isTradeValid(trades[i])) {
                         revert();
                     }
 
-                    // Set exchangeHash
-                    exchangeHashes[exchangeID] = keccak256(abi.encode(trades[i].stateAfter));
+                    // Set stateHash
+                    stateHashes[exchangeID] = keccak256(abi.encode(trades[i].stateAfter));
                 }
 
                 // Update changes in liquidity
                 {
-                    if (trades[i].stateBefore.token == trades[i].stateAfter.token) {
-                        uint256 stateBeforeLiquidity = trades[i].stateBefore.liquidity;
-                        uint256 stateAfterLiquidity = trades[i].stateAfter.liquidity;
+                    uint256 stateBeforeBalance = trades[i].stateBefore.balance;
+                    uint256 stateAfterBalance = trades[i].stateAfter.balance;
 
-                        if (stateBeforeLiquidity > stateAfterLiquidity) {
-                            updateLP(account, exchangeID, stateBeforeLiquidity - stateAfterLiquidity);
-                        } else if (stateBeforeLiquidity < stateAfterLiquidity) {
-                            _mint(to, exchangeID, stateAfterLiquidity - stateBeforeLiquidity);
-                        }
-
-                        if (trades[i].stateBefore.volume != trades[i].stateAfter.volume) revert();
-                    } else {
-                        uint256 fee = trades[i].stateAfter.fee;
-
-                        if (fee == 0) revert();
-                        if (trades[i].stateBefore.liquidity + fee != trades[i].stateAfter.liquidity) revert();
-                        if (trades[i].stateBefore.volume + 1 != trades[i].stateAfter.volume) revert();
+                    if (stateBeforeBalance > stateAfterBalance) {
+                        updateLP(account, exchangeID, stateBeforeBalance - stateAfterBalance);
+                    } else if (stateBeforeBalance < stateAfterBalance) {
+                        _mint(to, exchangeID, stateAfterBalance - stateAfterBalance);
                     }
                 }
 
