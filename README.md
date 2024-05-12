@@ -1,6 +1,6 @@
 # Building a Better Decentralized Exchange
 
-I am building a new protocol in response to the deceleration of decentralized exchange technology. There is still no viable answer to the question: what application software would Coinbase use to migrate their trading system onto a blockchain?. In many aspects, I hope this effort will be considered a **return to form**.
+I am building a new protocol in response to the deceleration of decentralized exchange technology. There is still no viable answer to the question: what application software would Coinbase use to migrate their trading system onto a blockchain? In many aspects, I hope this effort will be considered a **return to form**.
 
 The idea is simple: Production-grade exchange infrastructure iteratively simplified and refined. No compromises on neutrality, security, or decentralization will be made. The only motivation is progress.
 
