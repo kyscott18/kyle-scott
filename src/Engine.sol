@@ -31,7 +31,7 @@ struct Exchange {
 /// @param token "0" if the exchange holds its reserves in "token0", or "1" otherwise
 /// @param amount Balance of reserves
 /// @param liquidity Balance of issued liquidity
-/// @param balance
+/// @param balance Total supply of exchange shares
 struct ExchangeState {
     uint8 token;
     uint256 amount;
@@ -73,12 +73,15 @@ function isTradeValid(Trade memory trade) view returns (bool) {
         // Validate fee and balance changes
         bool isSwap = trade.stateBefore.token != trade.stateAfter.token;
         if (isSwap) {
-            if (mulGte(trade.fee, Q128, trade.stateAfter.liquidity, trade.exchange.spread) == false) return false;
+            if (mulGte(trade.fee, Q128, trade.stateBefore.liquidity, trade.exchange.spread) == false) return false;
             if (trade.stateBefore.liquidity + trade.fee != trade.stateAfter.liquidity) return false;
             if (trade.stateBefore.balance != trade.stateAfter.balance) return false;
         } else {
             if (trade.stateBefore.liquidity > trade.stateAfter.liquidity) {
                 if (trade.stateBefore.balance < trade.stateAfter.balance) return false;
+                if (trade.stateAfter.liquidity == 0 && trade.stateAfter.balance != trade.stateAfter.liquidity) {
+                    return false;
+                }
                 if (
                     mulGte(
                         trade.stateBefore.balance - trade.stateAfter.balance,
@@ -89,6 +92,9 @@ function isTradeValid(Trade memory trade) view returns (bool) {
                 ) return false;
             } else if (trade.stateBefore.liquidity < trade.stateAfter.liquidity) {
                 if (trade.stateBefore.balance > trade.stateAfter.balance) return false;
+                if (trade.stateBefore.liquidity == 0 && trade.stateAfter.balance != trade.stateAfter.liquidity) {
+                    return false;
+                }
                 if (
                     mulGte(
                         trade.stateAfter.liquidity - trade.stateBefore.liquidity,
