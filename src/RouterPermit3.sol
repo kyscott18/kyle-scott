@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 pragma solidity ^0.8.20;
 
-import {Engine, ICallback} from "./Engine.sol";
+import {Engine, ICallback, Trade} from "./Engine.sol";
 import {Permit3} from "ilrta/src/Permit3.sol";
 
 contract RouterPermit3 is ICallback {
@@ -44,7 +44,7 @@ contract RouterPermit3 is ICallback {
     <//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\>*/
 
     function route(
-        Engine.Trade[] calldata trades,
+        Trade[] calldata trades,
         address to,
         Permit3.SignatureTransferBatch calldata signatureTransfer,
         bytes calldata signature

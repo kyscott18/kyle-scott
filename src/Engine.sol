@@ -58,12 +58,12 @@ function isTradeValid(Trade memory trade) view returns (bool) {
         if (trade.stateAfter.token == 0) {
             if (trade.stateAfter.amount != trade.stateAfter.liquidity) return false;
         } else {
-            uint256 ratio;
+            uint256 ratio = trade.exchange.ratio;
             if (trade.exchange.drift > 0) {
-                ratio = (trade.exchange.ratio) + block.number * uint256(trade.exchange.drift);
+                ratio += block.number * uint256(trade.exchange.drift);
                 if (ratio < trade.exchange.ratio) ratio = type(uint256).max;
             } else if (trade.exchange.drift < 0) {
-                ratio = (trade.exchange.ratio) - block.number * uint256(-trade.exchange.drift);
+                ratio -= block.number * uint256(-trade.exchange.drift);
                 if (ratio > trade.exchange.ratio) ratio = 0;
             }
 
@@ -88,12 +88,12 @@ function isTradeValid(Trade memory trade) view returns (bool) {
                     ) == false
                 ) return false;
             } else if (trade.stateBefore.liquidity < trade.stateAfter.liquidity) {
-                if (trade.stateBefore.balance < trade.stateAfter.balance) return false;
+                if (trade.stateBefore.balance > trade.stateAfter.balance) return false;
                 if (
                     mulGte(
-                        trade.stateBefore.liquidity - trade.stateAfter.liquidity,
+                        trade.stateAfter.liquidity - trade.stateBefore.liquidity,
                         trade.stateBefore.balance,
-                        trade.stateBefore.balance - trade.stateAfter.balance,
+                        trade.stateAfter.balance - trade.stateBefore.balance,
                         trade.stateBefore.liquidity
                     ) == false
                 ) return false;
@@ -149,7 +149,7 @@ contract Engine is Position {
                     }
 
                     // Validate trade
-                    if (!isTradeValid(trades[i])) {
+                    if (isTradeValid(trades[i]) == false) {
                         revert();
                     }
 

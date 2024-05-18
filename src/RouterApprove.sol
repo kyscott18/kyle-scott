@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 pragma solidity ^0.8.20;
 
-import {Engine, ICallback} from "./Engine.sol";
+import {Engine, ICallback, Trade} from "./Engine.sol";
 import {Position} from "./Position.sol";
 import {ERC20} from "solmate/src/tokens/ERC20.sol";
 import {SafeTransferLib} from "solmate/src/utils/SafeTransferLib.sol";
@@ -53,7 +53,7 @@ contract RouterApprove is ICallback {
     <//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\>*/
 
     function route(
-        Engine.Trade[] calldata trades,
+        Trade[] calldata trades,
         address to,
         TokenAmount[] memory tokenAmounts,
         LiquidityAmount[] memory liquidityAmounts
