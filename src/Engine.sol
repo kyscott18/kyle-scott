@@ -149,7 +149,8 @@ contract Engine is Position {
                         if (spread > ratio || spread + ratio < ratio) revert();
 
                         // Set stateBefore to default value
-                        trades[i].stateBefore = ExchangeState({token: 0, amount: 0, liquidity: 0, balance: 0});
+                        trades[i].stateBefore =
+                            ExchangeState({token: trades[i].stateAfter.token, amount: 0, liquidity: 0, balance: 0});
                     } else if (stateHash != _stateHash) {
                         revert();
                     }
@@ -171,7 +172,7 @@ contract Engine is Position {
                     if (stateBeforeBalance > stateAfterBalance) {
                         updateLP(account, exchangeID, stateBeforeBalance - stateAfterBalance);
                     } else if (stateBeforeBalance < stateAfterBalance) {
-                        _mint(to, exchangeID, stateAfterBalance - stateAfterBalance);
+                        _mint(to, exchangeID, stateAfterBalance - stateBeforeBalance);
                     }
                 }
 
