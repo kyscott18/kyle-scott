@@ -40,8 +40,7 @@ contract ExecuteTest is Test, ICallback {
     function test_AddLiquidity_Cold() external {
         vm.pauseGasMetering();
 
-        Trade[] memory trades = new Trade[](1);
-        trades[0] = Trade({
+        Trade memory trade = Trade({
             exchange: Exchange({
                 token0: address(mockERC20_0),
                 token1: address(mockERC20_1),
@@ -53,13 +52,13 @@ contract ExecuteTest is Test, ICallback {
             stateAfter: ExchangeState({token: 0, amount: 1e18, liquidity: 1e18, balance: 1e18}),
             fee: 0
         });
-        exchangeID = bytes32(keccak256(abi.encode(trades[0].exchange)));
+        exchangeID = bytes32(keccak256(abi.encode(trade.exchange)));
 
         amount0 = 1e18;
 
         vm.resumeGasMetering();
 
-        engine.execute(trades, address(this), bytes(""));
+        engine.execute(trade, address(this), bytes(""));
 
         vm.pauseGasMetering();
 
@@ -75,8 +74,7 @@ contract ExecuteTest is Test, ICallback {
     function test_AddLiquidity_Hot() external {
         vm.pauseGasMetering();
 
-        Trade[] memory trades = new Trade[](1);
-        trades[0] = Trade({
+        Trade memory trade = Trade({
             exchange: Exchange({
                 token0: address(mockERC20_0),
                 token1: address(mockERC20_1),
@@ -88,13 +86,13 @@ contract ExecuteTest is Test, ICallback {
             stateAfter: ExchangeState({token: 0, amount: 1e18, liquidity: 1e18, balance: 1e18}),
             fee: 0
         });
-        exchangeID = bytes32(keccak256(abi.encode(trades[0].exchange)));
+        exchangeID = bytes32(keccak256(abi.encode(trade.exchange)));
 
         amount0 = 1e18;
 
-        engine.execute(trades, address(this), bytes(""));
+        engine.execute(trade, address(this), bytes(""));
 
-        trades[0] = Trade({
+        trade = Trade({
             exchange: Exchange({
                 token0: address(mockERC20_0),
                 token1: address(mockERC20_1),
@@ -108,7 +106,7 @@ contract ExecuteTest is Test, ICallback {
         });
         vm.resumeGasMetering();
 
-        engine.execute(trades, address(this), bytes(""));
+        engine.execute(trade, address(this), bytes(""));
 
         vm.pauseGasMetering();
 
@@ -124,8 +122,7 @@ contract ExecuteTest is Test, ICallback {
     function test_RemoveLiquidity() external {
         vm.pauseGasMetering();
 
-        Trade[] memory trades = new Trade[](1);
-        trades[0] = Trade({
+        Trade memory trade = Trade({
             exchange: Exchange({
                 token0: address(mockERC20_0),
                 token1: address(mockERC20_1),
@@ -137,15 +134,15 @@ contract ExecuteTest is Test, ICallback {
             stateAfter: ExchangeState({token: 0, amount: 1e18, liquidity: 1e18, balance: 1e18}),
             fee: 0
         });
-        exchangeID = bytes32(keccak256(abi.encode(trades[0].exchange)));
+        exchangeID = bytes32(keccak256(abi.encode(trade.exchange)));
 
         amount0 = 1e18;
 
-        engine.execute(trades, address(this), bytes(""));
+        engine.execute(trade, address(this), bytes(""));
 
         amount0 = 0;
 
-        trades[0] = Trade({
+        trade = Trade({
             exchange: Exchange({
                 token0: address(mockERC20_0),
                 token1: address(mockERC20_1),
@@ -162,7 +159,7 @@ contract ExecuteTest is Test, ICallback {
 
         vm.resumeGasMetering();
 
-        engine.execute(trades, address(this), bytes(""));
+        engine.execute(trade, address(this), bytes(""));
 
         vm.pauseGasMetering();
 
@@ -179,8 +176,7 @@ contract ExecuteTest is Test, ICallback {
     function test_Swap() external {
         vm.pauseGasMetering();
 
-        Trade[] memory trades = new Trade[](1);
-        trades[0] = Trade({
+        Trade memory trade = Trade({
             exchange: Exchange({
                 token0: address(mockERC20_0),
                 token1: address(mockERC20_1),
@@ -195,11 +191,11 @@ contract ExecuteTest is Test, ICallback {
 
         amount0 = 1e18;
 
-        engine.execute(trades, address(this), bytes(""));
+        engine.execute(trade, address(this), bytes(""));
 
         amount0 = 0;
 
-        trades[0] = Trade({
+        trade = Trade({
             exchange: Exchange({
                 token0: address(mockERC20_0),
                 token1: address(mockERC20_1),
@@ -216,7 +212,7 @@ contract ExecuteTest is Test, ICallback {
 
         vm.resumeGasMetering();
 
-        engine.execute(trades, address(this), bytes(""));
+        engine.execute(trade, address(this), bytes(""));
 
         amount1 = 0;
 
@@ -230,8 +226,7 @@ contract ExecuteTest is Test, ICallback {
     function test_SwapFee() external {
         vm.pauseGasMetering();
 
-        Trade[] memory trades = new Trade[](1);
-        trades[0] = Trade({
+        Trade memory trade = Trade({
             exchange: Exchange({
                 token0: address(mockERC20_0),
                 token1: address(mockERC20_1),
@@ -246,11 +241,11 @@ contract ExecuteTest is Test, ICallback {
 
         amount0 = 1e18;
 
-        engine.execute(trades, address(this), bytes(""));
+        engine.execute(trade, address(this), bytes(""));
 
         amount0 = 0;
 
-        trades[0] = Trade({
+        trade = Trade({
             exchange: Exchange({
                 token0: address(mockERC20_0),
                 token1: address(mockERC20_1),
@@ -267,7 +262,7 @@ contract ExecuteTest is Test, ICallback {
 
         vm.resumeGasMetering();
 
-        engine.execute(trades, address(this), bytes(""));
+        engine.execute(trade, address(this), bytes(""));
 
         amount1 = 0;
 

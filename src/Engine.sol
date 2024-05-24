@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 pragma solidity ^0.8.20;
 
-import {Account, createAccount, updateERC20, updateLP, getBalances, transferTokens} from "./Account.sol";
 import {Q128, mulGte} from "./Math.sol";
 import {Position} from "./Position.sol";
 import {ERC20} from "solmate/src/tokens/ERC20.sol";
@@ -125,102 +124,120 @@ contract Engine is Position {
                                  LOGIC
     <//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\>*/
 
-    /// @notice Performs a series of trades, and settles the aggregate by calling into a callback
-    /// @param trades Instructions of which trades to execute
+    /// @notice
+    /// @param trade Instructions of which trade to execute
     /// @param to Recipient of the output of the trades
     /// @param data Extra data passed to the callback function of the msg.sender
-    function execute(Trade[] memory trades, address to, bytes calldata data) external {
+    function execute(Trade memory trade, address to, bytes calldata data) external {
         unchecked {
-            Account memory account = createAccount(trades.length);
+            bytes32 exchangeID = bytes32(keccak256(abi.encode(trade.exchange)));
 
-            for (uint256 i = 0; i < trades.length; i++) {
-                bytes32 exchangeID = bytes32(keccak256(abi.encode(trades[i].exchange)));
+            // Update stateHashes
+            {
+                bytes32 stateHash = stateHashes[exchangeID];
+                bytes32 _stateHash = keccak256(abi.encode(trade.stateBefore));
 
-                // Update stateHashes
-                {
-                    bytes32 stateHash = stateHashes[exchangeID];
-                    bytes32 _stateHash = keccak256(abi.encode(trades[i].stateBefore));
+                // Validate stateBefore
+                if (stateHash == bytes32(0)) {
+                    // Validate ratio + spread combination
+                    uint256 ratio = trade.exchange.ratio;
+                    uint256 spread = trade.exchange.spread;
+                    if (spread > ratio || spread + ratio < ratio) revert();
 
-                    // Validate stateBefore
-                    if (stateHash == bytes32(0)) {
-                        // Validate ratio + spread combination
-                        uint256 ratio = trades[i].exchange.ratio;
-                        uint256 spread = trades[i].exchange.spread;
-                        if (spread > ratio || spread + ratio < ratio) revert();
-
-                        // Set stateBefore to default value
-                        trades[i].stateBefore =
-                            ExchangeState({token: trades[i].stateAfter.token, amount: 0, liquidity: 0, balance: 0});
-                    } else if (stateHash != _stateHash) {
-                        revert();
-                    }
-
-                    // Validate trade
-                    if (isTradeValid(trades[i]) == false) {
-                        revert();
-                    }
-
-                    // Set stateHash
-                    stateHashes[exchangeID] = keccak256(abi.encode(trades[i].stateAfter));
-                }
-
-                // Update changes in liquidity
-                {
-                    uint256 stateBeforeBalance = trades[i].stateBefore.balance;
-                    uint256 stateAfterBalance = trades[i].stateAfter.balance;
-
-                    if (stateBeforeBalance > stateAfterBalance) {
-                        updateLP(account, exchangeID, stateBeforeBalance - stateAfterBalance);
-                    } else if (stateBeforeBalance < stateAfterBalance) {
-                        _mint(to, exchangeID, stateAfterBalance - stateBeforeBalance);
-                    }
-                }
-
-                // Update changes in token amounts
-                {
-                    uint8 tokenBefore = trades[i].stateBefore.token;
-                    uint8 tokenAfter = trades[i].stateAfter.token;
-                    uint256 amountBefore = trades[i].stateBefore.amount;
-                    uint256 amountAfter = trades[i].stateAfter.amount;
-
-                    if (tokenBefore == tokenAfter) {
-                        address token = tokenBefore == 0 ? trades[i].exchange.token0 : trades[i].exchange.token1;
-
-                        if (amountBefore > amountAfter) {
-                            updateERC20(account, token, amountBefore - amountAfter, false);
-                        } else if (amountBefore < amountAfter) {
-                            updateERC20(account, token, amountAfter - amountBefore, true);
-                        }
-                    } else {
-                        (address tokenIn, address tokenOut) = tokenBefore == 0
-                            ? (trades[i].exchange.token1, trades[i].exchange.token0)
-                            : (trades[i].exchange.token0, trades[i].exchange.token1);
-
-                        updateERC20(account, tokenOut, amountBefore, false);
-                        updateERC20(account, tokenIn, amountAfter, true);
-                    }
-                }
-            }
-
-            transferTokens(account, to);
-
-            uint256[] memory balancesBefore = getBalances(account, address(this));
-            ICallback(msg.sender).callback(data);
-            uint256[] memory balancesAfter = getBalances(account, address(this));
-
-            // Receive tokens
-            for (uint256 i = 0; i < account.erc20DataIn.length; i++) {
-                if (account.erc20DataIn[i].token == address(0)) break;
-
-                if (balancesBefore[i] + account.erc20DataIn[i].amount != balancesAfter[i]) revert();
-            }
-
-            // Receive liquidity
-            for (uint256 i = 0; i < account.lpCount; i++) {
-                if (account.lpData[i].amount != _dataOf[address(this)][account.lpData[i].id].balance) {
+                    // Set stateBefore to default value
+                    trade.stateBefore =
+                        ExchangeState({token: trade.stateAfter.token, amount: 0, liquidity: 0, balance: 0});
+                } else if (stateHash != _stateHash) {
                     revert();
                 }
-                _burn(address(this), account.lpData[i].id, account.lpData[i].amount);
+
+                // Validate trade
+                if (isTradeValid(trade) == false) {
+                    revert();
+                }
+
+                // Set stateHash
+                stateHashes[exchangeID] = keccak256(abi.encode(trade.stateAfter));
+            }
+
+            bool sign0;
+            bool sign1;
+            uint256 amount0;
+            uint256 amount1;
+            uint256 balance;
+
+            // Update changes in liquidity
+            {
+                uint256 stateBeforeBalance = trade.stateBefore.balance;
+                uint256 stateAfterBalance = trade.stateAfter.balance;
+
+                if (stateBeforeBalance > stateAfterBalance) {
+                    balance = stateBeforeBalance - stateAfterBalance;
+                } else if (stateBeforeBalance < stateAfterBalance) {
+                    _mint(to, exchangeID, stateAfterBalance - stateBeforeBalance);
+                }
+            }
+
+            // Update changes in token amounts
+            {
+                uint8 tokenBefore = trade.stateBefore.token;
+                uint8 tokenAfter = trade.stateAfter.token;
+                uint256 amountBefore = trade.stateBefore.amount;
+                uint256 amountAfter = trade.stateAfter.amount;
+
+                if (tokenBefore == tokenAfter) {
+                    if (tokenBefore == 0) {
+                        if (amountBefore > amountAfter) {
+                            amount0 = amountBefore - amountAfter;
+                        } else {
+                            amount0 = amountAfter - amountBefore;
+                            sign0 = true;
+                        }
+                    } else {
+                        if (amountBefore > amountAfter) {
+                            amount1 = amountBefore - amountAfter;
+                        } else {
+                            amount1 = amountAfter - amountBefore;
+                            sign1 = true;
+                        }
+                    }
+                } else {
+                    if (tokenBefore == 0) {
+                        amount0 = amountBefore;
+                        amount1 = amountAfter;
+                        sign1 = true;
+                    } else {
+                        amount1 = amountBefore;
+                        amount0 = amountAfter;
+                        sign0 = true;
+                    }
+                }
+            }
+
+            if (sign0 == false && amount0 != 0) {
+                SafeTransferLib.safeTransfer(ERC20(trade.exchange.token0), to, amount0);
+            }
+            if (sign1 == false && amount1 != 0) {
+                SafeTransferLib.safeTransfer(ERC20(trade.exchange.token1), to, amount1);
+            }
+
+            uint256 reserve0Before =
+                sign0 == true && amount0 != 0 ? ERC20(trade.exchange.token0).balanceOf(address(this)) : 0;
+            uint256 reserve1Before =
+                sign1 == true && amount1 != 0 ? ERC20(trade.exchange.token1).balanceOf(address(this)) : 0;
+            ICallback(msg.sender).callback(data);
+            uint256 reserve0After =
+                sign0 == true && amount0 != 0 ? ERC20(trade.exchange.token0).balanceOf(address(this)) : 0;
+            uint256 reserve1After =
+                sign1 == true && amount1 != 0 ? ERC20(trade.exchange.token1).balanceOf(address(this)) : 0;
+
+            // Receive tokens
+            if (sign0 == true && amount0 != 0 && reserve0Before + amount0 != reserve0After) revert();
+            if (sign1 == true && amount1 != 0 && reserve1Before + amount1 != reserve1After) revert();
+
+            // Receive liquidity
+            if (balance != 0) {
+                _burn(address(this), exchangeID, balance);
             }
         }
     }
