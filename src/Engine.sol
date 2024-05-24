@@ -125,8 +125,8 @@ contract Engine is Position {
     <//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\>*/
 
     /// @notice
-    /// @param trade Instructions of which trade to execute
-    /// @param to Recipient of the output of the trades
+    /// @param trade Instructions of the trade to execute
+    /// @param to Recipient of the output of the trade
     /// @param data Extra data passed to the callback function of the msg.sender
     function execute(Trade memory trade, address to, bytes calldata data) external {
         unchecked {

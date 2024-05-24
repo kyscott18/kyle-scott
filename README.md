@@ -26,7 +26,7 @@ _Simplicity is the soul of good engineering._
 
 The main invariant of the protocol is `x + p * y = l`. This invariant is enforced on each trade. "p" represents the exchange rate, in units x per y. An exchange is uniquely identified by a token pair and exchange rate.
 
-A trade on the protocol consists of information identifying which exchange to act on and the resulting state of the exchange after the trade is complete. Every trade is deterministic at transaction generation time. The smart contract allows for efficient batching of trades. An in-memory account system keeps track of intermediate balance changes, and then settles using a callback at the end of the transaction.
+A trade on the protocol consists of information identifying which exchange to act on and the resulting state of the exchange after the trade is complete. Every trade is deterministic at transaction generation time. The smart contract allows for efficient execution of a trade. An in-memory account system keeps track of intermediate balance changes, and then settles using a callback at the end of the transaction.
 
 At a higher level, smart contracts are used to validate, resolve, and store data. Much business logic is moved off-chain, where compute is essentially free. Low gas is extremely important, specifically the gas costs of swapping between the tokens in an exchange.
 
