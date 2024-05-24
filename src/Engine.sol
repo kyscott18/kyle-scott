@@ -160,8 +160,8 @@ contract Engine is Position {
                 stateHashes[exchangeID] = keccak256(abi.encode(trade.stateAfter));
             }
 
-            bool sign0;
-            bool sign1;
+            uint8 sign0;
+            uint8 sign1;
             uint256 amount0;
             uint256 amount1;
             uint256 balance;
@@ -189,51 +189,51 @@ contract Engine is Position {
                     if (tokenBefore == 0) {
                         if (amountBefore > amountAfter) {
                             amount0 = amountBefore - amountAfter;
+                            sign0 = 1;
                         } else {
                             amount0 = amountAfter - amountBefore;
-                            sign0 = true;
+                            sign0 = 2;
                         }
                     } else {
                         if (amountBefore > amountAfter) {
                             amount1 = amountBefore - amountAfter;
+                            sign1 = 1;
                         } else {
                             amount1 = amountAfter - amountBefore;
-                            sign1 = true;
+                            sign1 = 2;
                         }
                     }
                 } else {
                     if (tokenBefore == 0) {
                         amount0 = amountBefore;
                         amount1 = amountAfter;
-                        sign1 = true;
+                        sign0 = 1;
+                        sign1 = 2;
                     } else {
-                        amount1 = amountBefore;
                         amount0 = amountAfter;
-                        sign0 = true;
+                        amount1 = amountBefore;
+                        sign0 = 2;
+                        sign1 = 1;
                     }
                 }
             }
 
-            if (sign0 == false && amount0 != 0) {
+            if (sign0 == 1) {
                 SafeTransferLib.safeTransfer(ERC20(trade.exchange.token0), to, amount0);
             }
-            if (sign1 == false && amount1 != 0) {
+            if (sign1 == 1) {
                 SafeTransferLib.safeTransfer(ERC20(trade.exchange.token1), to, amount1);
             }
 
-            uint256 reserve0Before =
-                sign0 == true && amount0 != 0 ? ERC20(trade.exchange.token0).balanceOf(address(this)) : 0;
-            uint256 reserve1Before =
-                sign1 == true && amount1 != 0 ? ERC20(trade.exchange.token1).balanceOf(address(this)) : 0;
+            uint256 reserve0Before = sign0 == 2 ? ERC20(trade.exchange.token0).balanceOf(address(this)) : 0;
+            uint256 reserve1Before = sign1 == 2 ? ERC20(trade.exchange.token1).balanceOf(address(this)) : 0;
             ICallback(msg.sender).callback(data);
-            uint256 reserve0After =
-                sign0 == true && amount0 != 0 ? ERC20(trade.exchange.token0).balanceOf(address(this)) : 0;
-            uint256 reserve1After =
-                sign1 == true && amount1 != 0 ? ERC20(trade.exchange.token1).balanceOf(address(this)) : 0;
+            uint256 reserve0After = sign0 == 2 ? ERC20(trade.exchange.token0).balanceOf(address(this)) : 0;
+            uint256 reserve1After = sign1 == 2 ? ERC20(trade.exchange.token1).balanceOf(address(this)) : 0;
 
             // Receive tokens
-            if (sign0 == true && amount0 != 0 && reserve0Before + amount0 != reserve0After) revert();
-            if (sign1 == true && amount1 != 0 && reserve1Before + amount1 != reserve1After) revert();
+            if (sign0 == 2 && reserve0Before + amount0 != reserve0After) revert();
+            if (sign1 == 2 && reserve1Before + amount1 != reserve1After) revert();
 
             // Receive liquidity
             if (balance != 0) {
