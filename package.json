@@ -2,10 +2,7 @@
   "name": "kyle-scott",
   "devDependencies": {
     "@biomejs/biome": "latest",
-    "@types/bun": "latest",
-    "@viem/anvil": "latest",
-    "@wagmi/cli": "latest",
-    "viem": "latest"
+    "@types/bun": "latest"
   },
   "dependencies": {
     "ds-test": "github:dapphub/ds-test",
