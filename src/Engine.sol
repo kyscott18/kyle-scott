@@ -31,11 +31,15 @@ struct Exchange {
 /// @param amount Balance of reserves
 /// @param liquidity Balance of issued liquidity
 /// @param balance Total supply of exchange shares
+/// @param taker Account that is currently reserving the exchange, address(0) if none
+/// @param expiry Block when reserve expires
 struct ExchangeState {
     uint8 token;
     uint256 amount;
     uint256 liquidity;
     uint256 balance;
+    uint256 expiry;
+    address taker;
 }
 
 /// @notice
@@ -53,6 +57,9 @@ struct Trade {
 /// @notice Returns true if the trade satisfies the protocol invariant
 function isTradeValid(Trade memory trade) view returns (bool) {
     unchecked {
+        // Validate reservation is respected
+        if (block.number < trade.stateBefore.expiry && trade.stateBefore.taker != msg.sender) return false;
+
         // Validate stateAfter invariant: l <= x + p * y
         if (trade.stateAfter.token == 0) {
             if (trade.stateAfter.amount != trade.stateAfter.liquidity) return false;
@@ -69,9 +76,25 @@ function isTradeValid(Trade memory trade) view returns (bool) {
             if (mulGte(trade.stateAfter.amount, ratio, trade.stateAfter.liquidity, Q128) == false) return false;
         }
 
-        // Validate fee and balance changes
+        // Validate delta between states
+
+        bool isReserve = trade.stateBefore.taker != trade.stateAfter.taker;
         bool isSwap = trade.stateBefore.token != trade.stateAfter.token;
-        if (isSwap) {
+
+        if (isReserve) {
+            if (trade.stateBefore.taker == address(0)) {
+                if (isSwap) return false;
+                if (mulGte(trade.fee, Q128, trade.stateBefore.liquidity, trade.exchange.spread) == false) return false;
+                if (trade.stateBefore.liquidity + trade.fee != trade.stateAfter.liquidity) return false;
+                if (trade.stateBefore.balance != trade.stateAfter.balance) return false;
+                if (trade.stateAfter.expiry != block.number + 1) return false;
+            } else {
+                if (trade.stateBefore.liquidity != trade.stateAfter.liquidity) return false;
+                if (trade.stateBefore.balance != trade.stateAfter.balance) return false;
+                if (trade.stateBefore.expiry != trade.stateAfter.expiry) return false;
+                if (trade.stateAfter.taker != address(0)) return false;
+            }
+        } else if (isSwap) {
             if (mulGte(trade.fee, Q128, trade.stateBefore.liquidity, trade.exchange.spread) == false) return false;
             if (trade.stateBefore.liquidity + trade.fee != trade.stateAfter.liquidity) return false;
             if (trade.stateBefore.balance != trade.stateAfter.balance) return false;
@@ -145,8 +168,14 @@ contract Engine is Position {
                     if (spread > ratio || spread + ratio < ratio) revert();
 
                     // Set stateBefore to default value
-                    trade.stateBefore =
-                        ExchangeState({token: trade.stateAfter.token, amount: 0, liquidity: 0, balance: 0});
+                    trade.stateBefore = ExchangeState({
+                        token: trade.stateAfter.token,
+                        amount: 0,
+                        liquidity: 0,
+                        balance: 0,
+                        expiry: 0,
+                        taker: address(0)
+                    });
                 } else if (stateHash != _stateHash) {
                     revert();
                 }
@@ -160,6 +189,7 @@ contract Engine is Position {
                 stateHashes[exchangeID] = keccak256(abi.encode(trade.stateAfter));
             }
 
+            // 0: no-op, 1: transfer out, 2: transfer in
             uint8 sign0;
             uint8 sign1;
             uint256 amount0;

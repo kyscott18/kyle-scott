@@ -48,8 +48,8 @@ contract ExecuteTest is Test, ICallback {
                 spread: 0,
                 drift: 0
             }),
-            stateBefore: ExchangeState({token: 0, amount: 0, liquidity: 0, balance: 0}),
-            stateAfter: ExchangeState({token: 0, amount: 1e18, liquidity: 1e18, balance: 1e18}),
+            stateBefore: ExchangeState({token: 0, amount: 0, liquidity: 0, balance: 0, expiry: 0, taker: address(0)}),
+            stateAfter: ExchangeState({token: 0, amount: 1e18, liquidity: 1e18, balance: 1e18, expiry: 0, taker: address(0)}),
             fee: 0
         });
         exchangeID = bytes32(keccak256(abi.encode(trade.exchange)));
@@ -82,8 +82,8 @@ contract ExecuteTest is Test, ICallback {
                 spread: 0,
                 drift: 0
             }),
-            stateBefore: ExchangeState({token: 0, amount: 0, liquidity: 0, balance: 0}),
-            stateAfter: ExchangeState({token: 0, amount: 1e18, liquidity: 1e18, balance: 1e18}),
+            stateBefore: ExchangeState({token: 0, amount: 0, liquidity: 0, balance: 0, expiry: 0, taker: address(0)}),
+            stateAfter: ExchangeState({token: 0, amount: 1e18, liquidity: 1e18, balance: 1e18, expiry: 0, taker: address(0)}),
             fee: 0
         });
         exchangeID = bytes32(keccak256(abi.encode(trade.exchange)));
@@ -100,8 +100,15 @@ contract ExecuteTest is Test, ICallback {
                 spread: 0,
                 drift: 0
             }),
-            stateBefore: ExchangeState({token: 0, amount: 1e18, liquidity: 1e18, balance: 1e18}),
-            stateAfter: ExchangeState({token: 0, amount: 2e18, liquidity: 2e18, balance: 2e18}),
+            stateBefore: ExchangeState({
+                token: 0,
+                amount: 1e18,
+                liquidity: 1e18,
+                balance: 1e18,
+                expiry: 0,
+                taker: address(0)
+            }),
+            stateAfter: ExchangeState({token: 0, amount: 2e18, liquidity: 2e18, balance: 2e18, expiry: 0, taker: address(0)}),
             fee: 0
         });
         vm.resumeGasMetering();
@@ -130,8 +137,8 @@ contract ExecuteTest is Test, ICallback {
                 spread: 0,
                 drift: 0
             }),
-            stateBefore: ExchangeState({token: 0, amount: 0, liquidity: 0, balance: 0}),
-            stateAfter: ExchangeState({token: 0, amount: 1e18, liquidity: 1e18, balance: 1e18}),
+            stateBefore: ExchangeState({token: 0, amount: 0, liquidity: 0, balance: 0, expiry: 0, taker: address(0)}),
+            stateAfter: ExchangeState({token: 0, amount: 1e18, liquidity: 1e18, balance: 1e18, expiry: 0, taker: address(0)}),
             fee: 0
         });
         exchangeID = bytes32(keccak256(abi.encode(trade.exchange)));
@@ -150,8 +157,15 @@ contract ExecuteTest is Test, ICallback {
                 spread: 0,
                 drift: 0
             }),
-            stateBefore: ExchangeState({token: 0, amount: 1e18, liquidity: 1e18, balance: 1e18}),
-            stateAfter: ExchangeState({token: 0, amount: 0, liquidity: 0, balance: 0}),
+            stateBefore: ExchangeState({
+                token: 0,
+                amount: 1e18,
+                liquidity: 1e18,
+                balance: 1e18,
+                expiry: 0,
+                taker: address(0)
+            }),
+            stateAfter: ExchangeState({token: 0, amount: 0, liquidity: 0, balance: 0, expiry: 0, taker: address(0)}),
             fee: 0
         });
 
@@ -184,8 +198,8 @@ contract ExecuteTest is Test, ICallback {
                 spread: 0,
                 drift: 0
             }),
-            stateBefore: ExchangeState({token: 0, amount: 0, liquidity: 0, balance: 0}),
-            stateAfter: ExchangeState({token: 0, amount: 1e18, liquidity: 1e18, balance: 1e18}),
+            stateBefore: ExchangeState({token: 0, amount: 0, liquidity: 0, balance: 0, expiry: 0, taker: address(0)}),
+            stateAfter: ExchangeState({token: 0, amount: 1e18, liquidity: 1e18, balance: 1e18, expiry: 0, taker: address(0)}),
             fee: 0
         });
 
@@ -203,8 +217,15 @@ contract ExecuteTest is Test, ICallback {
                 spread: 0,
                 drift: 0
             }),
-            stateBefore: ExchangeState({token: 0, amount: 1e18, liquidity: 1e18, balance: 1e18}),
-            stateAfter: ExchangeState({token: 1, amount: 1e18, liquidity: 1e18, balance: 1e18}),
+            stateBefore: ExchangeState({
+                token: 0,
+                amount: 1e18,
+                liquidity: 1e18,
+                balance: 1e18,
+                expiry: 0,
+                taker: address(0)
+            }),
+            stateAfter: ExchangeState({token: 1, amount: 1e18, liquidity: 1e18, balance: 1e18, expiry: 0, taker: address(0)}),
             fee: 0
         });
 
@@ -234,8 +255,8 @@ contract ExecuteTest is Test, ICallback {
                 spread: Q128 / 2,
                 drift: 0
             }),
-            stateBefore: ExchangeState({token: 0, amount: 0, liquidity: 0, balance: 0}),
-            stateAfter: ExchangeState({token: 0, amount: 1e18, liquidity: 1e18, balance: 1e18}),
+            stateBefore: ExchangeState({token: 0, amount: 0, liquidity: 0, balance: 0, expiry: 0, taker: address(0)}),
+            stateAfter: ExchangeState({token: 0, amount: 1e18, liquidity: 1e18, balance: 1e18, expiry: 0, taker: address(0)}),
             fee: 0
         });
 
@@ -253,8 +274,22 @@ contract ExecuteTest is Test, ICallback {
                 spread: Q128 / 2,
                 drift: 0
             }),
-            stateBefore: ExchangeState({token: 0, amount: 1e18, liquidity: 1e18, balance: 1e18}),
-            stateAfter: ExchangeState({token: 1, amount: 1.5e18, liquidity: 1.5e18, balance: 1e18}),
+            stateBefore: ExchangeState({
+                token: 0,
+                amount: 1e18,
+                liquidity: 1e18,
+                balance: 1e18,
+                expiry: 0,
+                taker: address(0)
+            }),
+            stateAfter: ExchangeState({
+                token: 1,
+                amount: 1.5e18,
+                liquidity: 1.5e18,
+                balance: 1e18,
+                expiry: 0,
+                taker: address(0)
+            }),
             fee: 0.5e18
         });
 
@@ -269,6 +304,155 @@ contract ExecuteTest is Test, ICallback {
         vm.pauseGasMetering();
 
         assertEq(mockERC20_0.balanceOf(address(this)), 1e18 + 1);
+
+        vm.resumeGasMetering();
+    }
+
+    function test_ReserveOpen() external {
+        vm.pauseGasMetering();
+
+        Trade memory trade = Trade({
+            exchange: Exchange({
+                token0: address(mockERC20_0),
+                token1: address(mockERC20_1),
+                ratio: Q128,
+                spread: 0,
+                drift: 0
+            }),
+            stateBefore: ExchangeState({token: 0, amount: 0, liquidity: 0, balance: 0, expiry: 0, taker: address(0)}),
+            stateAfter: ExchangeState({token: 0, amount: 1e18, liquidity: 1e18, balance: 1e18, expiry: 0, taker: address(0)}),
+            fee: 0
+        });
+
+        amount0 = 1e18;
+
+        engine.execute(trade, address(this), bytes(""));
+
+        amount0 = 0;
+
+        trade = Trade({
+            exchange: Exchange({
+                token0: address(mockERC20_0),
+                token1: address(mockERC20_1),
+                ratio: Q128,
+                spread: 0,
+                drift: 0
+            }),
+            stateBefore: ExchangeState({
+                token: 0,
+                amount: 1e18,
+                liquidity: 1e18,
+                balance: 1e18,
+                expiry: 0,
+                taker: address(0)
+            }),
+            stateAfter: ExchangeState({
+                token: 0,
+                amount: 1e18,
+                liquidity: 1e18,
+                balance: 1e18,
+                expiry: block.number + 1,
+                taker: address(this)
+            }),
+            fee: 0
+        });
+
+        vm.resumeGasMetering();
+
+        engine.execute(trade, address(this), bytes(""));
+
+        vm.pauseGasMetering();
+
+        vm.resumeGasMetering();
+    }
+
+    function test_ReserveClose() external {
+        vm.pauseGasMetering();
+
+        Trade memory trade = Trade({
+            exchange: Exchange({
+                token0: address(mockERC20_0),
+                token1: address(mockERC20_1),
+                ratio: Q128,
+                spread: 0,
+                drift: 0
+            }),
+            stateBefore: ExchangeState({token: 0, amount: 0, liquidity: 0, balance: 0, expiry: 0, taker: address(0)}),
+            stateAfter: ExchangeState({token: 0, amount: 1e18, liquidity: 1e18, balance: 1e18, expiry: 0, taker: address(0)}),
+            fee: 0
+        });
+
+        amount0 = 1e18;
+
+        engine.execute(trade, address(this), bytes(""));
+
+        amount0 = 0;
+
+        trade = Trade({
+            exchange: Exchange({
+                token0: address(mockERC20_0),
+                token1: address(mockERC20_1),
+                ratio: Q128,
+                spread: 0,
+                drift: 0
+            }),
+            stateBefore: ExchangeState({
+                token: 0,
+                amount: 1e18,
+                liquidity: 1e18,
+                balance: 1e18,
+                expiry: 0,
+                taker: address(0)
+            }),
+            stateAfter: ExchangeState({
+                token: 0,
+                amount: 1e18,
+                liquidity: 1e18,
+                balance: 1e18,
+                expiry: block.number + 1,
+                taker: address(this)
+            }),
+            fee: 0
+        });
+
+        engine.execute(trade, address(this), bytes(""));
+
+        trade = Trade({
+            exchange: Exchange({
+                token0: address(mockERC20_0),
+                token1: address(mockERC20_1),
+                ratio: Q128,
+                spread: 0,
+                drift: 0
+            }),
+            stateBefore: ExchangeState({
+                token: 0,
+                amount: 1e18,
+                liquidity: 1e18,
+                balance: 1e18,
+                expiry: block.number + 1,
+                taker: address(this)
+            }),
+            stateAfter: ExchangeState({
+                token: 1,
+                amount: 1e18,
+                liquidity: 1e18,
+                balance: 1e18,
+                expiry: block.number + 1,
+                taker: address(0)
+            }),
+            fee: 0
+        });
+
+        amount1 = 1e18;
+
+        vm.resumeGasMetering();
+
+        engine.execute(trade, address(this), bytes(""));
+
+        amount1 = 0;
+
+        vm.pauseGasMetering();
 
         vm.resumeGasMetering();
     }

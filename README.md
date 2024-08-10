@@ -55,5 +55,5 @@ The protocol is not currently ready for production use. It lacks:
 - [x] Basic
 - [x] Fees
 - [x] Drift
-- [ ] Reserved swaps
+- [x] Reserved swaps
 - [ ] Flatcoin

@@ -11,8 +11,10 @@ contract isTradeValidTest is Test {
         vm.pauseGasMetering();
 
         Exchange memory exchange = Exchange({token0: address(0), token1: address(1), ratio: Q128, spread: 0, drift: 0});
-        ExchangeState memory stateBefore = ExchangeState({token: 0, amount: 0, liquidity: 0, balance: 0});
-        ExchangeState memory stateAfter = ExchangeState({token: 0, amount: 1e18, liquidity: 1e18, balance: 1e18});
+        ExchangeState memory stateBefore =
+            ExchangeState({token: 0, amount: 0, liquidity: 0, balance: 0, expiry: 0, taker: address(0)});
+        ExchangeState memory stateAfter =
+            ExchangeState({token: 0, amount: 1e18, liquidity: 1e18, balance: 1e18, expiry: 0, taker: address(0)});
 
         vm.resumeGasMetering();
 
@@ -29,8 +31,10 @@ contract isTradeValidTest is Test {
         vm.pauseGasMetering();
 
         Exchange memory exchange = Exchange({token0: address(0), token1: address(1), ratio: Q128, spread: 0, drift: 0});
-        ExchangeState memory stateBefore = ExchangeState({token: 0, amount: 0, liquidity: 0, balance: 0});
-        ExchangeState memory stateAfter = ExchangeState({token: 0, amount: 1e18 - 1, liquidity: 1e18, balance: 1e18});
+        ExchangeState memory stateBefore =
+            ExchangeState({token: 0, amount: 0, liquidity: 0, balance: 0, expiry: 0, taker: address(0)});
+        ExchangeState memory stateAfter =
+            ExchangeState({token: 0, amount: 1e18 - 1, liquidity: 1e18, balance: 1e18, expiry: 0, taker: address(0)});
 
         vm.resumeGasMetering();
 
@@ -47,8 +51,10 @@ contract isTradeValidTest is Test {
         vm.pauseGasMetering();
 
         Exchange memory exchange = Exchange({token0: address(0), token1: address(1), ratio: Q128, spread: 0, drift: 0});
-        ExchangeState memory stateBefore = ExchangeState({token: 0, amount: 0, liquidity: 0, balance: 0});
-        ExchangeState memory stateAfter = ExchangeState({token: 0, amount: 1e18, liquidity: 1e18, balance: 1e18 + 1});
+        ExchangeState memory stateBefore =
+            ExchangeState({token: 0, amount: 0, liquidity: 0, balance: 0, expiry: 0, taker: address(0)});
+        ExchangeState memory stateAfter =
+            ExchangeState({token: 0, amount: 1e18, liquidity: 1e18, balance: 1e18 + 1, expiry: 0, taker: address(0)});
 
         vm.resumeGasMetering();
 
@@ -65,8 +71,10 @@ contract isTradeValidTest is Test {
         vm.pauseGasMetering();
 
         Exchange memory exchange = Exchange({token0: address(0), token1: address(1), ratio: Q128, spread: 0, drift: 0});
-        ExchangeState memory stateBefore = ExchangeState({token: 1, amount: 0, liquidity: 0, balance: 0});
-        ExchangeState memory stateAfter = ExchangeState({token: 1, amount: 1e18, liquidity: 1e18, balance: 1e18});
+        ExchangeState memory stateBefore =
+            ExchangeState({token: 1, amount: 0, liquidity: 0, balance: 0, expiry: 0, taker: address(0)});
+        ExchangeState memory stateAfter =
+            ExchangeState({token: 1, amount: 1e18, liquidity: 1e18, balance: 1e18, expiry: 0, taker: address(0)});
 
         vm.resumeGasMetering();
 
@@ -83,8 +91,10 @@ contract isTradeValidTest is Test {
         vm.pauseGasMetering();
 
         Exchange memory exchange = Exchange({token0: address(0), token1: address(1), ratio: Q128, spread: 0, drift: 0});
-        ExchangeState memory stateBefore = ExchangeState({token: 1, amount: 0, liquidity: 0, balance: 0});
-        ExchangeState memory stateAfter = ExchangeState({token: 1, amount: 1e18 - 1, liquidity: 1e18, balance: 1e18});
+        ExchangeState memory stateBefore =
+            ExchangeState({token: 1, amount: 0, liquidity: 0, balance: 0, expiry: 0, taker: address(0)});
+        ExchangeState memory stateAfter =
+            ExchangeState({token: 1, amount: 1e18 - 1, liquidity: 1e18, balance: 1e18, expiry: 0, taker: address(0)});
 
         vm.resumeGasMetering();
 
@@ -101,8 +111,10 @@ contract isTradeValidTest is Test {
         vm.pauseGasMetering();
 
         Exchange memory exchange = Exchange({token0: address(0), token1: address(1), ratio: Q128, spread: 0, drift: 0});
-        ExchangeState memory stateBefore = ExchangeState({token: 1, amount: 0, liquidity: 0, balance: 0});
-        ExchangeState memory stateAfter = ExchangeState({token: 1, amount: 1e18, liquidity: 1e18, balance: 1e18 + 1});
+        ExchangeState memory stateBefore =
+            ExchangeState({token: 1, amount: 0, liquidity: 0, balance: 0, expiry: 0, taker: address(0)});
+        ExchangeState memory stateAfter =
+            ExchangeState({token: 1, amount: 1e18, liquidity: 1e18, balance: 1e18 + 1, expiry: 0, taker: address(0)});
 
         vm.resumeGasMetering();
 
@@ -120,8 +132,10 @@ contract isTradeValidTest is Test {
 
         Exchange memory exchange =
             Exchange({token0: address(0), token1: address(1), ratio: Q128, spread: 0, drift: int256(Q128)});
-        ExchangeState memory stateBefore = ExchangeState({token: 1, amount: 0, liquidity: 0, balance: 0});
-        ExchangeState memory stateAfter = ExchangeState({token: 1, amount: 0.5e18, liquidity: 1e18, balance: 1e18});
+        ExchangeState memory stateBefore =
+            ExchangeState({token: 1, amount: 0, liquidity: 0, balance: 0, expiry: 0, taker: address(0)});
+        ExchangeState memory stateAfter =
+            ExchangeState({token: 1, amount: 0.5e18, liquidity: 1e18, balance: 1e18, expiry: 0, taker: address(0)});
 
         vm.resumeGasMetering();
 
@@ -139,8 +153,10 @@ contract isTradeValidTest is Test {
 
         Exchange memory exchange =
             Exchange({token0: address(0), token1: address(1), ratio: type(uint256).max, spread: 0, drift: int256(Q128)});
-        ExchangeState memory stateBefore = ExchangeState({token: 1, amount: 0, liquidity: 0, balance: 0});
-        ExchangeState memory stateAfter = ExchangeState({token: 1, amount: 1, liquidity: 1e18, balance: 1e18});
+        ExchangeState memory stateBefore =
+            ExchangeState({token: 1, amount: 0, liquidity: 0, balance: 0, expiry: 0, taker: address(0)});
+        ExchangeState memory stateAfter =
+            ExchangeState({token: 1, amount: 1, liquidity: 1e18, balance: 1e18, expiry: 0, taker: address(0)});
 
         vm.resumeGasMetering();
 
@@ -158,8 +174,10 @@ contract isTradeValidTest is Test {
 
         Exchange memory exchange =
             Exchange({token0: address(0), token1: address(1), ratio: Q128, spread: 0, drift: -int256(Q128 / 2)});
-        ExchangeState memory stateBefore = ExchangeState({token: 1, amount: 0, liquidity: 0, balance: 0});
-        ExchangeState memory stateAfter = ExchangeState({token: 1, amount: 2e18, liquidity: 1e18, balance: 1e18});
+        ExchangeState memory stateBefore =
+            ExchangeState({token: 1, amount: 0, liquidity: 0, balance: 0, expiry: 0, taker: address(0)});
+        ExchangeState memory stateAfter =
+            ExchangeState({token: 1, amount: 2e18, liquidity: 1e18, balance: 1e18, expiry: 0, taker: address(0)});
 
         vm.resumeGasMetering();
 
@@ -177,8 +195,10 @@ contract isTradeValidTest is Test {
 
         Exchange memory exchange =
             Exchange({token0: address(0), token1: address(1), ratio: 0, spread: 0, drift: -int256(Q128 / 2)});
-        ExchangeState memory stateBefore = ExchangeState({token: 1, amount: 0, liquidity: 0, balance: 0});
-        ExchangeState memory stateAfter = ExchangeState({token: 1, amount: 0, liquidity: 0, balance: 0});
+        ExchangeState memory stateBefore =
+            ExchangeState({token: 1, amount: 0, liquidity: 0, balance: 0, expiry: 0, taker: address(0)});
+        ExchangeState memory stateAfter =
+            ExchangeState({token: 1, amount: 0, liquidity: 0, balance: 0, expiry: 0, taker: address(0)});
 
         vm.resumeGasMetering();
 
@@ -196,8 +216,10 @@ contract isTradeValidTest is Test {
 
         Exchange memory exchange =
             Exchange({token0: address(0), token1: address(1), ratio: Q128, spread: Q128 / 2, drift: 0});
-        ExchangeState memory stateBefore = ExchangeState({token: 0, amount: 1e18, liquidity: 1e18, balance: 1e18});
-        ExchangeState memory stateAfter = ExchangeState({token: 1, amount: 1.5e18, liquidity: 1.5e18, balance: 1e18});
+        ExchangeState memory stateBefore =
+            ExchangeState({token: 0, amount: 1e18, liquidity: 1e18, balance: 1e18, expiry: 0, taker: address(0)});
+        ExchangeState memory stateAfter =
+            ExchangeState({token: 1, amount: 1.5e18, liquidity: 1.5e18, balance: 1e18, expiry: 0, taker: address(0)});
 
         vm.resumeGasMetering();
 
@@ -215,9 +237,16 @@ contract isTradeValidTest is Test {
 
         Exchange memory exchange =
             Exchange({token0: address(0), token1: address(1), ratio: Q128, spread: Q128 / 2, drift: 0});
-        ExchangeState memory stateBefore = ExchangeState({token: 0, amount: 1e18, liquidity: 1e18, balance: 1e18});
-        ExchangeState memory stateAfter =
-            ExchangeState({token: 1, amount: 1.5e18 - 1, liquidity: 1.5e18 - 1, balance: 1e18});
+        ExchangeState memory stateBefore =
+            ExchangeState({token: 0, amount: 1e18, liquidity: 1e18, balance: 1e18, expiry: 0, taker: address(0)});
+        ExchangeState memory stateAfter = ExchangeState({
+            token: 1,
+            amount: 1.5e18 - 1,
+            liquidity: 1.5e18 - 1,
+            balance: 1e18,
+            expiry: 0,
+            taker: address(0)
+        });
 
         vm.resumeGasMetering();
 
@@ -235,9 +264,139 @@ contract isTradeValidTest is Test {
 
         Exchange memory exchange =
             Exchange({token0: address(0), token1: address(1), ratio: Q128, spread: Q128 / 2, drift: 0});
-        ExchangeState memory stateBefore = ExchangeState({token: 0, amount: 1e18, liquidity: 1e18, balance: 1e18});
+        ExchangeState memory stateBefore =
+            ExchangeState({token: 0, amount: 1e18, liquidity: 1e18, balance: 1e18, expiry: 0, taker: address(0)});
+        ExchangeState memory stateAfter = ExchangeState({
+            token: 1,
+            amount: 1.5e18 - 1,
+            liquidity: 1.5e18 - 1,
+            balance: 1e18,
+            expiry: 0,
+            taker: address(0)
+        });
+
+        vm.resumeGasMetering();
+
+        bool result = isTradeValid(Trade(exchange, stateBefore, stateAfter, 0.5e18));
+
+        vm.pauseGasMetering();
+
+        assertEq(result, false);
+
+        vm.resumeGasMetering();
+    }
+
+    function test_isTradeValid_ReserveOpenTrue() external {
+        vm.pauseGasMetering();
+
+        Exchange memory exchange =
+            Exchange({token0: address(0), token1: address(1), ratio: Q128, spread: Q128 / 2, drift: 0});
+        ExchangeState memory stateBefore =
+            ExchangeState({token: 0, amount: 1e18, liquidity: 1e18, balance: 1e18, expiry: 0, taker: address(0)});
+        ExchangeState memory stateAfter = ExchangeState({
+            token: 0,
+            amount: 1.5e18,
+            liquidity: 1.5e18,
+            balance: 1e18,
+            expiry: block.number + 1,
+            taker: address(this)
+        });
+
+        vm.resumeGasMetering();
+
+        bool result = isTradeValid(Trade(exchange, stateBefore, stateAfter, 0.5e18));
+
+        vm.pauseGasMetering();
+
+        assertEq(result, true);
+
+        vm.resumeGasMetering();
+    }
+
+    function test_isTradeValid_ReserveOpenFalseExpiry() external {
+        vm.pauseGasMetering();
+
+        Exchange memory exchange =
+            Exchange({token0: address(0), token1: address(1), ratio: Q128, spread: Q128 / 2, drift: 0});
+        ExchangeState memory stateBefore =
+            ExchangeState({token: 0, amount: 1e18, liquidity: 1e18, balance: 1e18, expiry: 0, taker: address(0)});
+        ExchangeState memory stateAfter = ExchangeState({
+            token: 0,
+            amount: 1.5e18,
+            liquidity: 1.5e18,
+            balance: 1e18,
+            expiry: block.number,
+            taker: address(this)
+        });
+
+        vm.resumeGasMetering();
+
+        bool result = isTradeValid(Trade(exchange, stateBefore, stateAfter, 0.5e18));
+
+        vm.pauseGasMetering();
+
+        assertEq(result, false);
+
+        vm.resumeGasMetering();
+    }
+
+    function test_isTradeValid_TakerFalse() external {
+        vm.pauseGasMetering();
+
+        Exchange memory exchange =
+            Exchange({token0: address(0), token1: address(1), ratio: Q128, spread: Q128 / 2, drift: 0});
+        ExchangeState memory stateBefore =
+            ExchangeState({token: 0, amount: 1e18, liquidity: 1e18, balance: 1e18, expiry: 0, taker: address(this)});
+        ExchangeState memory stateAfter = ExchangeState({
+            token: 0,
+            amount: 1.5e18,
+            liquidity: 1.5e18,
+            balance: 1e18,
+            expiry: block.number + 1,
+            taker: address(msg.sender)
+        });
+
+        vm.resumeGasMetering();
+
+        bool result = isTradeValid(Trade(exchange, stateBefore, stateAfter, 0.5e18));
+
+        vm.pauseGasMetering();
+
+        assertEq(result, false);
+
+        vm.resumeGasMetering();
+    }
+
+    function test_isTradeValid_ReserveCloseTrue() external {
+        vm.pauseGasMetering();
+
+        Exchange memory exchange =
+            Exchange({token0: address(0), token1: address(1), ratio: Q128, spread: Q128 / 2, drift: 0});
+        ExchangeState memory stateBefore =
+            ExchangeState({token: 0, amount: 1e18, liquidity: 1e18, balance: 1e18, expiry: 0, taker: address(this)});
         ExchangeState memory stateAfter =
-            ExchangeState({token: 1, amount: 1.5e18 - 1, liquidity: 1.5e18 - 1, balance: 1e18});
+            ExchangeState({token: 1, amount: 1e18, liquidity: 1e18, balance: 1e18, expiry: 0, taker: address(0)});
+
+        vm.resumeGasMetering();
+
+        bool result = isTradeValid(Trade(exchange, stateBefore, stateAfter, 0.5e18));
+
+        vm.pauseGasMetering();
+
+        assertEq(result, true);
+
+        vm.resumeGasMetering();
+    }
+
+    function test_isTradeValid_ReserveCloseFalseExpiry() external {
+        vm.pauseGasMetering();
+
+        Exchange memory exchange =
+            Exchange({token0: address(0), token1: address(1), ratio: Q128, spread: Q128 / 2, drift: 0});
+        ExchangeState memory stateBefore =
+            ExchangeState({token: 0, amount: 1e18, liquidity: 1e18, balance: 1e18, expiry: 0, taker: address(this)});
+        ExchangeState memory stateAfter =
+            ExchangeState({token: 1, amount: 1e18, liquidity: 1e18, balance: 1e18, expiry: 1, taker: address(0)});
 
         vm.resumeGasMetering();
 
